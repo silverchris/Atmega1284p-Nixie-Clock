@@ -13,7 +13,7 @@ ASRC =
 OPT = s
 
 GIT_VERSION := $(shell git describe --dirty --always)
-
+$(info $$GIT_VERSION is [${GIT_VERSION}])
 # Name of this Makefile (used for "make depend").
 MAKEFILE = Makefile
 
