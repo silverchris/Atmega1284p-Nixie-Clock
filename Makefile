@@ -12,8 +12,7 @@ SRC = $(TARGET).c uart.c buffer.c xbootapi.c
 ASRC = 
 OPT = s
 
-GIT_VERSION := $(shell git commit) 
-#describe --dirty --always)
+GIT_VERSION := $(shell git describe --dirty --always)
 $(info $$GIT_VERSION is [${GIT_VERSION}])
 # Name of this Makefile (used for "make depend").
 MAKEFILE = Makefile
@@ -192,7 +191,6 @@ $(TARGET).elf: $(OBJ)
 
 # Compile: create object files from C source files.
 .c.o:
-	$(info $$GIT_VERSION is [${GIT_VERSION}])
 	$(CC) -c $(ALL_CFLAGS) $< -o $@ 
 
 
