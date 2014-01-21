@@ -72,6 +72,10 @@ void setup_uarts(void){
 }
 
 int8_t uart_putchar(int8_t c){
+    if(c == '\n'){
+        int8_t r = '\r';
+        cbWrite(&uart0_tx_buffer, &r);
+    }
     cbWrite(&uart0_tx_buffer, &c);
     UCSR0B |= (1<<UDRIE0);
     return 0;

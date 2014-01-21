@@ -13,7 +13,10 @@ int main(void){
     setup_uarts();
     stdout = stdin = &uart_str;
     sei();
-    printf("Version: %s\n", VERSION);
+    printf("Software Version: %s\n", VERSION);
+    uint16_t xbootver;
+    xboot_get_version(&xbootver);
+    printf("xboot Version:    %d.%d\n", xbootver>>8, xbootver&0xFF);
     uint32_t count = 0;
     DDRA |= (1<<PA4);
     while(1){
