@@ -13,7 +13,7 @@ int main(void){
     setup_uarts();
     stdout = stdin = &uart_str;
     sei();
-    printf("Test");
+    printf("Version: %s\n", VERSION);
     uint32_t count = 0;
     DDRA |= (1<<PA4);
     while(1){

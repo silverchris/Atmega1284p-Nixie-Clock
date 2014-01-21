@@ -12,6 +12,8 @@ SRC = $(TARGET).c uart.c buffer.c xbootapi.c
 ASRC = 
 OPT = s
 
+GIT_VERSION := $(shell git describe --dirty --always)
+
 # Name of this Makefile (used for "make depend").
 MAKEFILE = Makefile
 
@@ -38,7 +40,7 @@ CDEBUG = -g$(DEBUG)
 CWARN = -Wall -Wstrict-prototypes
 CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 #CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
-CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
+CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA) -DVERSION=\"$(GIT_VERSION)\"
 
 
 #ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs 
