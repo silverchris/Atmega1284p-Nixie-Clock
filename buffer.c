@@ -1,3 +1,5 @@
+/*Implementation shamelessly borrowed from
+http://en.wikipedia.org/wiki/Circular_buffer */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>

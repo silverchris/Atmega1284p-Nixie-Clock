@@ -8,7 +8,7 @@
 MCU = atmega1284p
 FORMAT = ihex
 TARGET = main
-SRC = $(TARGET).c uart.c buffer.c xbootapi.c
+SRC = $(TARGET).c uart.c buffer.c xbootapi.c twi_master.c ds3231.c time.c
 ASRC = 
 OPT = s
 
@@ -79,7 +79,7 @@ MATH_LIB = -lm
 EXTMEMOPTS =
 
 #LDMAP = $(LDFLAGS) -Wl,-Map=$(TARGET).map,--cref
-LDFLAGS = $(EXTMEMOPTS) $(LDMAP) $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
+LDFLAGS = $(EXTMEMOPTS) $(LDMAP) $(PRINTF_LIB_FLOAT) $(SCANF_LIB) $(MATH_LIB)
 
 
 # Programming support using avrdude. Settings and variables.
