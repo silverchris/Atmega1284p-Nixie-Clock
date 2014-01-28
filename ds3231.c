@@ -9,6 +9,7 @@
 #include <avr/interrupt.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "twi_master.h"
 #include "ds3231.h"
@@ -31,7 +32,7 @@ static const uint8_t ds3231_init_seq[] PROGMEM = {
     0x00, // alarm2 hours
     0x01, // alarm2 date
     0x00, // control
-    0x00, // control/status
+    0x08, // control/status
     0x00 // aging offset
 };
 
@@ -55,18 +56,27 @@ uint8_t ds3231_init(void) {
 
     while(TWI_busy){};
 
-    /* word address for config start */
-    TWI_buffer_out[0] = 0x00;
-
-    /* call me only after TWI_init has been called */
-    for (i = 0; i < sizeof(ds3231_init_seq); i++) {
-        TWI_buffer_out[i + 1] = pgm_read_byte(&ds3231_init_seq[i]);
-    }
-
-    /* write config to chip */
-    TWI_master_start_write(DS3231_ADDR, sizeof(ds3231_init_seq) + 1);
-
+    TWI_buffer_out[0] = 0x0F;    
+    TWI_master_start_write_then_read(DS3231_ADDR, 1, 1);
     while(TWI_busy){};
+    if((0x80 & TWI_buffer_in[0])){
+        printf("RTC STOPPED, Reinitializing!\n");
+        /* word address for config start */
+        TWI_buffer_out[0] = 0x00;
+
+        /* call me only after TWI_init has been called */
+        for (i = 0; i < sizeof(ds3231_init_seq); i++) {
+            TWI_buffer_out[i + 1] = pgm_read_byte(&ds3231_init_seq[i]);
+        }
+
+        /* write config to chip */
+        TWI_master_start_write(DS3231_ADDR, sizeof(ds3231_init_seq) + 1);
+
+        while(TWI_busy){};
+    }
+    else{
+        printf("RTC Valid\n");
+    }
     return 0;
 }
 

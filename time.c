@@ -96,16 +96,16 @@ void printtime(tm *tm_struct){
     printf("Seconds: %u\n", tm_struct->tm_sec);
 }
 
-int main(void){
-    tm tm_struct;
-    tm_struct.tm_sec = 10;
-    tm_struct.tm_min = 10;
-    tm_struct.tm_hour = 18;
-    tm_struct.tm_yday = 27;
-    tm_struct.tm_year = 14;
-    tm_struct.tm_mday = 1;
-    tm_struct.tm_mon = 0;
-    tm_struct.tm_yday = -1;
-    timegm(&tm_struct);
-    printtime(&tm_struct);
-}
+// int main(void){
+//     tm tm_struct;
+//     tm_struct.tm_sec = 10;
+//     tm_struct.tm_min = 10;
+//     tm_struct.tm_hour = 18;
+//     tm_struct.tm_yday = 27;
+//     tm_struct.tm_year = 14;
+//     tm_struct.tm_mday = 1;
+//     tm_struct.tm_mon = 0;
+//     tm_struct.tm_yday = -1;
+//     timegm(&tm_struct);
+//     printtime(&tm_struct);
+// }
