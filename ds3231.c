@@ -76,6 +76,10 @@ uint8_t ds3231_init(void) {
     }
     else{
         printf("RTC Valid\n");
+        tm tm_struct;
+        ds3231_get(&tm_struct);
+        printtime(&tm_struct);
+        printf("DS3231 Temperature: %2.1f\n", ds3231_get_temp());
     }
     return 0;
 }
