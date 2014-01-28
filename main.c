@@ -36,18 +36,7 @@ int main(void){
     printtime(&tm_struct);
     rtc_timer_setup();
     //ds3231_set(&tm_struct);
-    
-    DDRA |= (1<<PA4);
     while(1){
-        count++;
-        if(count == 1000000){
-            PORTA |= (1<<PA4);
-        }
-        if(count == 2000000){
-            count = 0;
-            PORTA &= ~(1<<PA4);
-            ds3231_get(&tm_struct);
-            printtime(&tm_struct);
-        }
+        _NOP();
     }
 }

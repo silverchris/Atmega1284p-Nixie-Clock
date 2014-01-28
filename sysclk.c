@@ -5,19 +5,25 @@
 
 #include "time.h"
 
-time_t rtc_seconds;//seconds since epoch, duh
-uint16_t rtc_milli;//milliseconds inbetween seconds
+time_t sys_seconds;//seconds since power on
+uint16_t sys_milli;//milliseconds inbetween seconds
+uint8_t led;
 
 ISR (TIMER1_COMPA_vect){
-    if(rtc_milli == 1024){
-        rtc_seconds++;
-        rtc_milli = 0;
-        tm tm_struct;
-        gmtime_r(&rtc_seconds, &tm_struct);
-        printtime(&tm_struct);
+    if(sys_milli == 1024){
+        sys_seconds++;
+        sys_milli = 0;
+        if(led == 0){
+            PORTA |= (1<<PA4);
+            led++;
+        }
+        else if(led == 1){
+            led = 0;
+            PORTA &= ~(1<<PA4);
+        }
     }
     else{
-        rtc_milli++;
+        sys_milli++;
     }
 }
 
@@ -29,4 +35,6 @@ void rtc_timer_setup(void){
     TCNT1 = 0;
     OCR1A = 32; 
     TIMSK1 |= (1 << OCIE1A);//setup Match interupt
+    DDRA |= (1<<PA4); //set direction for blinking led
+    led = 0;
 }
