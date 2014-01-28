@@ -78,7 +78,12 @@ uint8_t ds3231_init(void) {
         printf("RTC Valid\n");
         tm tm_struct;
         ds3231_get(&tm_struct);
-        printtime(&tm_struct);
+        printf("Years: 2%03u ", tm_struct.tm_year);
+        printf("Month: %u ", tm_struct.tm_mon);
+        printf("Day: %u ", tm_struct.tm_mday);
+        printf("%02u:", tm_struct.tm_hour);
+        printf("%02u:", tm_struct.tm_min);
+        printf("%02u\n", tm_struct.tm_sec);
         printf("DS3231 Temperature: %2.1f\n", ds3231_get_temp());
     }
     return 0;
