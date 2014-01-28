@@ -2,14 +2,17 @@
 #include <stdint.h>
 #include <math.h>
 
+#include <avr/pgmspace.h>
+
+
 #include "time.h"
 
-const static uint8_t months[2][12] = {
+const static uint8_t months[2][12] PROGMEM = {
     {31,28,31,30,31,30,31,31,30,31,30,31},
     {31,29,31,30,31,30,31,31,30,31,30,31}
 };
 
-const static uint8_t wday[12] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+const static uint8_t wday[12] PROGMEM = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
 
 tm *gmtime_r(time_t *time, tm *tm_struct){
     time_t t = *time;
@@ -40,9 +43,9 @@ tm *gmtime_r(time_t *time, tm *tm_struct){
     uint16_t monthday = tm_struct->tm_yday+1;
     uint8_t monthcount = 0;
     uint8_t leap = IsLeapYear(tm_struct->tm_year);
-    while(monthday > months[leap][monthcount]){
-        if(monthday > months[leap][monthcount]){
-            monthday -= months[leap][monthcount];
+    while(monthday > pgm_read_byte(&months[leap][monthcount])){
+        if(monthday > pgm_read_byte(&months[leap][monthcount])){
+            monthday -= pgm_read_byte(&months[leap][monthcount]);
             monthcount += 1;
         }
     }
@@ -53,7 +56,7 @@ tm *gmtime_r(time_t *time, tm *tm_struct){
         y += 28;
     }
     y -= (tm_struct->tm_mon < 2);
-    tm_struct->tm_wday = (y+(y/4)-(y/100)+wday[tm_struct->tm_mon]+tm_struct->tm_mday)%7;
+    tm_struct->tm_wday = (y+(y/4)-(y/100)+pgm_read_byte(&wday[tm_struct->tm_mon])+tm_struct->tm_mday)%7;
     return tm_struct;
 }
 
@@ -62,8 +65,8 @@ time_t timegm(tm *tm_struct){
         uint8_t leap = IsLeapYear(tm_struct->tm_year);
         int c;
         for(c = 0; c < tm_struct->tm_mon; c++){
-            tm_struct->tm_yday += months[leap][c];
-            printf("%d\n",months[leap][c]);
+            tm_struct->tm_yday += pgm_read_byte(&months[leap][c]);
+            printf("%d\n",pgm_read_byte(&months[leap][c]));
         }
         tm_struct->tm_yday += tm_struct->tm_mday;
     }

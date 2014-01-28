@@ -41,7 +41,7 @@ static void init_uart1(void){
 }
 
 void uart0_tx(void){
-    int8_t tx;
+    char tx;
     if(UCSR0A & (1<<UDRE0)){
         if(cbIsEmpty(&uart0_tx_buffer)){
             UCSR0B &= ~(1<<UDRIE0);
@@ -54,7 +54,7 @@ void uart0_tx(void){
 }
 
 ISR(USART0_RX_vect){
-    int8_t rx = UDR0;
+    char rx = UDR0;
     if (rx == 0x1B) {
         xboot_reset();
     }
@@ -71,9 +71,9 @@ void setup_uarts(void){
     init_uart0();
 }
 
-int8_t uart_putchar(int8_t c){
+int uart_putchar(char c, FILE *stream){
     if(c == '\n'){
-        int8_t r = '\r';
+        char r = '\r';
         cbWrite(&uart0_tx_buffer, &r);
     }
     cbWrite(&uart0_tx_buffer, &c);
@@ -81,8 +81,8 @@ int8_t uart_putchar(int8_t c){
     return 0;
 }
 
-int8_t uart_getchar(void){
-    int8_t c = 0;
+int uart_getchar(FILE *stream){
+    char c = 0;
     if(!cbIsEmpty(&uart0_rx_buffer)){
         cbRead(&uart0_tx_buffer, &c);
     }

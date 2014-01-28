@@ -84,7 +84,7 @@ uint8_t ds3231_init(void) {
         printf("%02u:", tm_struct.tm_hour);
         printf("%02u:", tm_struct.tm_min);
         printf("%02u\n", tm_struct.tm_sec);
-        printf("DS3231 Temperature: %2.1f\n", ds3231_get_temp());
+        printf("DS3231 Temperature: %2.1f\n", (double)ds3231_get_temp());
     }
     return 0;
 }

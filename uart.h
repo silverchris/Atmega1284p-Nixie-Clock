@@ -4,6 +4,6 @@
 #define UART_BUFFER_SIZE 100
 
 void setup_uarts(void);
-int8_t uart_putchar(int8_t c);
-int8_t uart_getchar(void);
+int uart_putchar(char c, FILE *stream);
+int uart_getchar(FILE *stream);
 #endif

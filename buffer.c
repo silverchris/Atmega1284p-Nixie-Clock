@@ -10,7 +10,7 @@ void cbInit(CircularBuffer *cb, int8_t size) {
     cb->size  = size + 1; /* include empty elem */
     cb->start = 0;
     cb->end   = 0;
-    cb->elems = (int8_t *)calloc(cb->size, sizeof(int8_t));
+    cb->elems = (char *)calloc(cb->size, sizeof(char));
 }
  
 void cbFree(CircularBuffer *cb) {
@@ -27,7 +27,7 @@ int8_t cbIsEmpty(CircularBuffer *cb) {
  
 /* Write an element, overwriting oldest element if buffer is full. App can
    choose to avoid the overwrite by checking cbIsFull(). */
-void cbWrite(CircularBuffer *cb, int8_t *elem) {
+void cbWrite(CircularBuffer *cb, char *elem) {
     cb->elems[cb->end] = *elem;
     cb->end = (cb->end + 1) % cb->size;
     if (cb->end == cb->start)
@@ -35,7 +35,7 @@ void cbWrite(CircularBuffer *cb, int8_t *elem) {
 }
  
 /* Read oldest element. App must ensure !cbIsEmpty() first. */
-void cbRead(CircularBuffer *cb, int8_t *elem) {
+void cbRead(CircularBuffer *cb, char *elem) {
     *elem = cb->elems[cb->start];
     cb->start = (cb->start + 1) % cb->size;
 }
