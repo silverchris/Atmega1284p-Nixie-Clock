@@ -1,3 +1,5 @@
+#include "time.h"
+
 #ifndef _DS3231_H_
 #define _DS3231_H_
 
@@ -15,12 +17,8 @@
 
 
 uint8_t ds3231_init(void);
-/*void ds3231_set_time(nixie_time_t);
-void ds3231_set_date(gps_rmc_date_t);
-void ds3231_get_date(nixie_date_t *);
-uint8_t ds3231_get_registers(uint8_t *);
-uint8_t ds3231_get_reg_as_int(uint8_t);
-uint8_t ds3231_print_info(char *);*/
+void ds3231_set(tm *);
+void ds3231_get(tm *);
 float ds3231_convert_temp(uint8_t, uint8_t);
 float ds3231_get_temp(void);
 

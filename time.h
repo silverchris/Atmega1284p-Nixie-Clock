@@ -1,3 +1,5 @@
+#ifndef _TIME_H
+#define _TIME_H
 typedef uint32_t time_t;
 
 typedef struct{
@@ -12,4 +14,9 @@ typedef struct{
     uint8_t tm_isdst;
 } tm;
 
+tm *gmtime_r(time_t *, tm *);
+time_t timegm(tm *);
+void printtime(tm *);
+
 #define IsLeapYear(x)   ((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
+#endif

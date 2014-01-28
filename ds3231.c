@@ -42,6 +42,11 @@ static inline uint8_t dectobcd(uint8_t k) {
     return((k/10)*16 + (k%10));
 }
 
+static inline uint8_t BCDToDecimal (uint8_t bcdByte){
+  return (((bcdByte & 0xF0) >> 4) * 10) + (bcdByte & 0x0F);
+}
+ 
+
 
 /* Initialize the DS3231 chip. TWI_init() must have been called for
    this to work. */
@@ -66,87 +71,50 @@ uint8_t ds3231_init(void) {
 }
 
 
-// /* Set ds3231 time */
-// void ds3231_set_time(time_t time) {
-//     while(TWI_busy){};
-// 
-//     /* word address for time set start */
-//     TWI_buffer_out[0] = 0x00;
-//     TWI_buffer_out[1] = dectobcd(time.seconds);
-//     TWI_buffer_out[2] = dectobcd(time.minutes);
-//     /* maintain 24-hour setting */
-//     TWI_buffer_out[3] = (~(0xc0) & dectobcd(time.hours));
-// 
-//     /* write (UTC) time to chip */
-//     TWI_master_start_write(DS3231_ADDR, 4);
-//     
-//     while(TWI_busy){};
-//     return;
-// }
+/* Set ds3231 time */
+void ds3231_set(tm *tm_struct) {
+    while(TWI_busy){};
 
+    /* word address for time set start */
+    TWI_buffer_out[0] = 0x00;
+    TWI_buffer_out[1] = dectobcd(tm_struct->tm_sec);
+    TWI_buffer_out[2] = dectobcd(tm_struct->tm_min);
+    /* maintain 24-hour setting */
+    TWI_buffer_out[3] = (~(0xc0) & dectobcd(tm_struct->tm_hour));
+    /* Set Date*/
+    TWI_buffer_out[4] = 0x00;//skip this reg
+    TWI_buffer_out[5] = (0x3f & dectobcd(tm_struct->tm_mday));
+    TWI_buffer_out[6] = (0x1f & dectobcd(tm_struct->tm_mon+1));
+    TWI_buffer_out[7] = (dectobcd(tm_struct->tm_year));
+    /* write (UTC) time to chip */
+    TWI_master_start_write(DS3231_ADDR, 8);
+    
+    while(TWI_busy){};
+    return;
+}
 
+/* Get time from ds3231*/
+void ds3231_get(tm *tm_struct){
+    while(TWI_busy){};
+    
+    TWI_buffer_out[0] = 0x00;
+    
+    TWI_master_start_write_then_read(DS3231_ADDR, 1, 8);
+    
+    while(TWI_busy) {};
+    
+    tm_struct->tm_sec = BCDToDecimal(TWI_buffer_in[0]);
+    tm_struct->tm_min = BCDToDecimal(TWI_buffer_in[1]);
+    tm_struct->tm_hour = BCDToDecimal(~(0xc0)&TWI_buffer_in[2]);
 
-// /* Get all registers from the DS3231 and copy them to reg_array */
-// uint8_t ds3231_get_registers(uint8_t *reg_array) {
-//     if (reg_array == NULL) {
-//         return 1;
-//     }
-//     
-//     while(TWI_busy){};
-//     /* Start at first word */
-//     TWI_buffer_out[0] = 0x00;
-// //     TWI_master_start_write_then_read(DS3231_ADDR, 1, DS3231_NREG);
-//     while(TWI_busy) {};
-// 
-//     memcpy(reg_array, (const void *)TWI_buffer_in, DS3231_NREG);
-//     
-//     return 0;
-// }
-
-// /* Convert DS3231 register into regular integer */
-// uint8_t ds3231_get_reg_as_int(uint8_t s) {
-//     return((s & 0x0F) + 10*((s & 0xF0) >> 4));
-// }
-// 
-// /* Convert DS3231 hours register into a number (0 - 23) */
-// static uint8_t _ds3231_get_hours(uint8_t h) {
-//     return((h & 0x0F) + 10*((h & 0x30) >> 4));
-// }
-
-/* String representation of DS3231 registers */
-// TODO: Add alarm registers... do we care?
-// uint8_t ds3231_print_info(char *print_buf) {
-//     uint8_t j = 0;
-//     uint8_t reg_buf[DS3231_NREG];
-//     uint8_t stat = 0;
-//     char tbuf[8];
-// 
-//     if (print_buf == NULL) {
-//         return 1;
-//     }
-// 
-//     memset(tbuf, 0x00, sizeof(tbuf));
-// 
-//     stat = ds3231_get_registers(reg_buf);
-//     if (stat) {
-//         return 1;
-//     }
-//     
-//     j += sprintf(print_buf + j, "Seconds: %i\n", _ds3231_get_seconds(reg_buf[0]));
-//     j += sprintf(print_buf + j, "Minutes: %i\n", _ds3231_get_minutes(reg_buf[1]));
-//     j += sprintf(print_buf + j, "Hours: %i\n", _ds3231_get_hours(reg_buf[2]));
-//     j += sprintf(print_buf + j, "Day: %i\n", reg_buf[3]);
-//     j += sprintf(print_buf + j, "Date: %i\n", _ds3231_get_date(reg_buf[4]));
-//     j += sprintf(print_buf + j, "Month: %i\n", _ds3231_get_hours(reg_buf[5]));
-//     j += sprintf(print_buf + j, "Year: %i\n", _ds3231_get_year(reg_buf[6]));
-//     j += sprintf(print_buf + j, "Control: 0x%02X\n", reg_buf[14]);
-//     j += sprintf(print_buf + j, "Ctrl/Stat: 0x%02X\n", reg_buf[15]);
-//     j += sprintf(print_buf + j, "Aging: 0x%02X\n", reg_buf[16]);
-//     dtostrf(ds3231_convert_temp(reg_buf[17], reg_buf[18]), 7, 2, tbuf);
-//     j += sprintf(print_buf + j, "Temp: %s\n", tbuf);
-//     
-//     return 0;
-// }
+    tm_struct->tm_mday = BCDToDecimal(0x3f & TWI_buffer_in[4]);
+    tm_struct->tm_mon = BCDToDecimal(0x1f & TWI_buffer_in[5])-1;
+    tm_struct->tm_year = BCDToDecimal(TWI_buffer_in[6]);
+    
+    tm_struct->tm_wday = -1;
+    tm_struct->tm_yday = -1;
+    return;
+}
 
 /* Convert the two temperature registers into a float value. MSB is
    integer temp in degrees celsius. The highest two bits of the LSB
