@@ -8,7 +8,7 @@
 MCU = atmega1284p
 FORMAT = ihex
 TARGET = main
-SRC = $(TARGET).c uart.c buffer.c xbootapi.c twi_master.c ds3231.c time.c sysclk.c
+SRC = $(TARGET).c uart.c buffer.c xbootapi.c twi_master.c ds3231.c time.c sysclk.c spi.c display.c
 ASRC = 
 OPT = s
 

@@ -88,27 +88,22 @@ time_t timegm(tm *tm_struct){
     return seconds;
 }
 
+void utc_digits(tm *tm_struct, uint8_t array[]){
+    array[5] = tm_struct->tm_hour/10;
+    array[4] = tm_struct->tm_hour%10;
+    array[3] = tm_struct->tm_min/10;
+    array[2] = tm_struct->tm_min%10;
+    array[1] = tm_struct->tm_sec/10;
+    array[0] = tm_struct->tm_sec%10;
+}
+
 void printtime(tm *tm_struct){
     printf("Years: 2%03u ", tm_struct->tm_year);
     printf("Days since January 1st: %d ", tm_struct->tm_yday);
     printf("Month: %u ", tm_struct->tm_mon);
     printf("Day: %u ", tm_struct->tm_mday);
     printf("Weekday: %u\n", tm_struct->tm_wday);
-    printf("Hours: %u ", tm_struct->tm_hour);
-    printf("Minutes: %u ", tm_struct->tm_min);
-    printf("Seconds: %u\n", tm_struct->tm_sec);
+    printf("%02u:", tm_struct->tm_hour);
+    printf("%02u: ", tm_struct->tm_min);
+    printf("%02u\n", tm_struct->tm_sec);
 }
-
-// int main(void){
-//     tm tm_struct;
-//     tm_struct.tm_sec = 10;
-//     tm_struct.tm_min = 10;
-//     tm_struct.tm_hour = 18;
-//     tm_struct.tm_yday = 27;
-//     tm_struct.tm_year = 14;
-//     tm_struct.tm_mday = 1;
-//     tm_struct.tm_mon = 0;
-//     tm_struct.tm_yday = -1;
-//     timegm(&tm_struct);
-//     printtime(&tm_struct);
-// }

@@ -17,6 +17,7 @@ typedef struct{
 tm *gmtime_r(time_t *, tm *);
 time_t timegm(tm *);
 void printtime(tm *);
+void utc_digits(tm *, uint8_t *);
 
 #define IsLeapYear(x)   ((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
 #endif

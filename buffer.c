@@ -6,7 +6,7 @@ http://en.wikipedia.org/wiki/Circular_buffer */
 
 #include "buffer.h"
  
-void cbInit(CircularBuffer *cb, int8_t size) {
+void cbInit(CircularBuffer *cb, int16_t size) {
     cb->size  = size + 1; /* include empty elem */
     cb->start = 0;
     cb->end   = 0;

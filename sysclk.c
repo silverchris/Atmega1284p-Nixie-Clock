@@ -4,6 +4,7 @@
 #include <avr/interrupt.h>
 
 #include "time.h"
+#include "display.h"
 
 time_t sys_seconds;//seconds since power on
 uint16_t sys_milli;//milliseconds inbetween seconds
@@ -21,6 +22,12 @@ ISR (TIMER1_COMPA_vect){
             led = 0;
             PORTA &= ~(1<<PA4);
         }
+        printf("Seconds: %lu\n", sys_seconds);
+        uint8_t array[6];
+        tm tm_struct;
+        gmtime_r(&sys_seconds, &tm_struct);
+        utc_digits(&tm_struct, &array[0]);
+        display(&array[0]);
     }
     else{
         sys_milli++;

@@ -10,6 +10,8 @@
 #include "twi_master.h"
 #include "time.h"
 #include "sysclk.h"
+#include "spi.h"
+#include "display.h"
 
 FILE uart_str = FDEV_SETUP_STREAM(uart_putchar, uart_getchar, _FDEV_SETUP_RW);
 
@@ -24,7 +26,8 @@ int main(void){
     printf("xboot Version:    %d.%d\n", xbootver>>8, xbootver&0xFF);
     TWI_init();
     ds3231_init();
-    
+    spi_init();
+    display_init();
     while(1){
         _NOP();
     }
