@@ -6,7 +6,7 @@ http://en.wikipedia.org/wiki/Circular_buffer */
 
 #include "buffer.h"
  
-void cbInit(CircularBuffer *cb, int16_t size) {
+void cbInit(CircularBuffer *cb, uint8_t size) {
     cb->size  = size + 1; /* include empty elem */
     cb->start = 0;
     cb->end   = 0;
@@ -20,11 +20,7 @@ void cbFree(CircularBuffer *cb) {
 int8_t cbIsFull(CircularBuffer *cb) {
     return (cb->end + 1) % cb->size == cb->start;
 }
- 
-int8_t cbIsEmpty(CircularBuffer *cb) {
-    return (cb->end == cb->start);
-}
- 
+
 /* Write an element, overwriting oldest element if buffer is full. App can
    choose to avoid the overwrite by checking cbIsFull(). */
 void cbWrite(CircularBuffer *cb, char *elem) {
@@ -35,7 +31,7 @@ void cbWrite(CircularBuffer *cb, char *elem) {
 }
  
 /* Read oldest element. App must ensure !cbIsEmpty() first. */
-void cbRead(CircularBuffer *cb, char *elem) {
+void cbRead(CircularBuffer *cb, volatile char *elem) {
     *elem = cb->elems[cb->start];
     cb->start = (cb->start + 1) % cb->size;
 }

@@ -22,7 +22,7 @@ void TWI_init(void) {
 }
  
 /* master write to slave */
-void TWI_master_start_write(uint8_t slave_addr, uint16_t write_bytes) {
+void TWI_master_start_write(uint8_t slave_addr, uint8_t write_bytes) {
     //7 bit slave address, number of bytes to write
     TWI_busy=1;
     if(write_bytes>TWI_BUFFER_MAX){
@@ -37,7 +37,7 @@ void TWI_master_start_write(uint8_t slave_addr, uint16_t write_bytes) {
 }
  
 /* master read from slave */
-void TWI_master_start_read(uint8_t slave_addr, uint16_t read_bytes){
+void TWI_master_start_read(uint8_t slave_addr, uint8_t read_bytes){
     TWI_busy=1;
     if(read_bytes>TWI_BUFFER_MAX){
         TWI_read_bytes=TWI_BUFFER_MAX;
@@ -51,7 +51,7 @@ void TWI_master_start_read(uint8_t slave_addr, uint16_t read_bytes){
 }
  
 /* master write then read without releasing buss between */
-void TWI_master_start_write_then_read(uint8_t slave_addr, uint16_t write_bytes, uint16_t read_bytes){
+void TWI_master_start_write_then_read(uint8_t slave_addr, uint8_t write_bytes, uint8_t read_bytes){
     TWI_busy=1;
     if(write_bytes>TWI_BUFFER_MAX){
         TWI_write_bytes=TWI_BUFFER_MAX;

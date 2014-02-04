@@ -66,7 +66,7 @@ time_t timegm(tm *tm_struct){
         int c;
         for(c = 0; c < tm_struct->tm_mon; c++){
             tm_struct->tm_yday += pgm_read_byte(&months[leap][c]);
-            printf("%d\n",pgm_read_byte(&months[leap][c]));
+//             printf("%d\n",pgm_read_byte(&months[leap][c]));
         }
         tm_struct->tm_yday += tm_struct->tm_mday;
     }

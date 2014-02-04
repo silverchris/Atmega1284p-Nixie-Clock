@@ -10,7 +10,7 @@ FORMAT = ihex
 TARGET = main
 SRC = $(TARGET).c uart.c buffer.c xbootapi.c twi_master.c ds3231.c time.c sysclk.c spi.c display.c
 ASRC = 
-OPT = s
+OPT = 
 
 GIT_VERSION := $(shell git describe --dirty --always)
 $(info $$GIT_VERSION is [${GIT_VERSION}])
@@ -133,7 +133,7 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 # Default target.
 all: build
 
-build: elf hex eep
+build: elf hex eep lss
 
 elf: $(TARGET).elf
 hex: $(TARGET).hex

@@ -12,9 +12,8 @@
 //LATCH PA1
 //ENABLE PA2
 
-//TODO recalculate these so we can use a normal data order
-const uint8_t hdigit[10] = {0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01};
-const uint8_t ldigit[10] = {0x00,0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x00};
+const uint8_t hdigit[10] PROGMEM = {0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01};
+const uint8_t ldigit[10] PROGMEM = {0x00,0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x00};
 
 void display(uint8_t array[]){
     PORTA |=  (1<<PA2); //Disable the display
@@ -25,11 +24,11 @@ void display(uint8_t array[]){
     int x;
     for(x = 0; x < 6; x++){
         printf("Digit %d Numeral %u ", x, array[x]);
-        spi_write(hdigit[array[x]]);
-        printf("0x%02x ", hdigit[array[x]]);
+        spi_write(pgm_read_byte(&hdigit[array[x]]));
+        printf("0x%02x ", pgm_read_byte(&hdigit[array[x]]));
 
-        spi_write(ldigit[array[x]]);
-        printf("0x%02x\n", ldigit[array[x]]);
+        spi_write(pgm_read_byte(&ldigit[array[x]]));
+        printf("0x%02x\n", pgm_read_byte(&ldigit[array[x]]));
     }
     
     PORTA |=  (1<<PA1); //Latch the Data 

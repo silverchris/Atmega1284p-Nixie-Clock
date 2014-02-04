@@ -45,10 +45,10 @@ volatile uint8_t TWI_error;
 
 /* buffers and variables */
 //volatile uint16_t TWI_buffer_max;
-volatile uint16_t TWI_buffer_pos;
+volatile uint8_t TWI_buffer_pos;
 //volatile uint8_t TWI_buffer_len;
-volatile uint16_t TWI_read_bytes;
-volatile uint16_t TWI_write_bytes;
+volatile uint8_t TWI_read_bytes;
+volatile uint8_t TWI_write_bytes;
 
 #define TWI_ENABLE _BV(TWEN) | _BV(TWINT) | _BV(TWIE)
 #define TWI_ACK _BV(TWEA) | TWI_ENABLE
@@ -57,8 +57,8 @@ volatile uint16_t TWI_write_bytes;
 #define TWI_STOP _BV(TWSTO) | TWI_ENABLE
 
 void TWI_init(void);
-void TWI_master_start_write(uint8_t slave_addr, uint16_t write_bytes);
-void TWI_master_start_read(uint8_t slave_addr, uint16_t read_bytes);
-void TWI_master_start_write_then_read(uint8_t slave_addr, uint16_t write_bytes, uint16_t read_bytes);
+void TWI_master_start_write(uint8_t slave_addr, uint8_t write_bytes);
+void TWI_master_start_read(uint8_t slave_addr, uint8_t read_bytes);
+void TWI_master_start_write_then_read(uint8_t slave_addr, uint8_t write_bytes, uint8_t read_bytes);
 
 #endif
