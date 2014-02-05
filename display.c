@@ -8,10 +8,6 @@
 #include "spi.h"
 #include "main.h"
 
-//RESET PA0
-//LATCH PA1
-//ENABLE PA2
-
 const uint8_t hdigit[10] PROGMEM = {0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01};
 const uint8_t ldigit[10] PROGMEM = {0x00,0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x00};
 
@@ -23,12 +19,8 @@ void display(uint8_t array[]){
     
     int x;
     for(x = 0; x < 6; x++){
-        printf("Digit %d Numeral %u ", x, array[x]);
         spi_write(pgm_read_byte(&hdigit[array[x]]));
-        printf("0x%02x ", pgm_read_byte(&hdigit[array[x]]));
-
         spi_write(pgm_read_byte(&ldigit[array[x]]));
-        printf("0x%02x\n", pgm_read_byte(&ldigit[array[x]]));
     }
     
     PORTA |=  (1<<PA1); //Latch the Data 

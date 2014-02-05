@@ -84,7 +84,9 @@ uint8_t ds3231_init(void) {
         printf("%02u:", tm_struct.tm_hour);
         printf("%02u:", tm_struct.tm_min);
         printf("%02u\n", tm_struct.tm_sec);
-        printf("DS3231 Temperature: %2.1f\n", (double)ds3231_get_temp());
+        ds3231_temperature temp;
+        ds3231_get_temp(&temp);
+        printf("DS3231 Temperature: %d.%dC\n", temp.temperature, temp.fraction);
     }
     return 0;
 }
@@ -135,26 +137,14 @@ void ds3231_get(tm *tm_struct){
     return;
 }
 
-/* Convert the two temperature registers into a float value. MSB is
-   integer temp in degrees celsius. The highest two bits of the LSB
-   are fractional temperature in quarters. */
-float ds3231_convert_temp(uint8_t msb, uint8_t lsb) {
-    /* the LSB of temp is stored at the MSB of the word for some
-       reason */
-    return((float)msb + (float)(lsb >> 6)/4.0);
-}
-
 /* Retrieve temperature from DS3231 and return as a float */
-float ds3231_get_temp(void) {
-    uint8_t t_msb;
-    uint8_t t_lsb;
-
+void ds3231_get_temp(ds3231_temperature *temp) {
     while(TWI_busy) {};
     TWI_buffer_out[0] = 0x11;
     TWI_master_start_write_then_read(DS3231_ADDR, 1, 2);
     while(TWI_busy) {};
 
-    t_msb = TWI_buffer_in[0];
-    t_lsb = TWI_buffer_in[1];
-    return(ds3231_convert_temp(t_msb, t_lsb));
+    temp->temperature = TWI_buffer_in[0];
+    temp->fraction = (TWI_buffer_in[1]>>6)*25;
+    return;
 }

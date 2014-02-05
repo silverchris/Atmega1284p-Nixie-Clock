@@ -22,7 +22,6 @@ ISR (TIMER1_COMPA_vect){
             led = 0;
             PORTA &= ~(1<<PA4);
         }
-        printf("Seconds: %lu\n", sys_seconds);
         uint8_t array[6];
         tm tm_struct;
         gmtime_r(&sys_seconds, &tm_struct);
