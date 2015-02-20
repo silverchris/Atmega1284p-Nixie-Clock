@@ -8,7 +8,7 @@
 MCU = atmega1284p
 FORMAT = ihex
 TARGET = main
-SRC = $(TARGET).c uart.c buffer.c xbootapi.c twi_master.c ds3231.c time.c sysclk.c spi.c display.c
+SRC = $(TARGET).c uart.c buffer.c xbootapi.c twi_master.c ds3231.c sysclk.c spi.c display.c ui.c tz.c
 ASRC = 
 OPT = 
 
@@ -186,12 +186,12 @@ extcoff: $(TARGET).elf
 
 # Link: create ELF output file from object files.
 $(TARGET).elf: $(OBJ)
-	$(CC) $(ALL_CFLAGS) $(OBJ) --output $@ $(LDFLAGS)
+	$(CC) $(ALL_CFLAGS) $(OBJ) tz_names.o tz_offset.o tz_zones.o tz_rules.o --output $@ $(LDFLAGS) #  tz_rules.o 
 
 
 # Compile: create object files from C source files.
 .c.o:
-	$(CC) -c $(ALL_CFLAGS) $< -o $@ 
+	@$(CC) -c $(ALL_CFLAGS) $< -o $@ 
 
 
 # Compile: create assembler files from C source files.
@@ -223,3 +223,11 @@ depend:
 	$(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $(SRC) $(ASRC) >> $(MAKEFILE)
 
 .PHONY:	all build elf hex eep lss sym program coff extcoff clean depend
+
+
+tz_o:
+	$(OBJCOPY) --rename-section .data=.progmem.data,contents,alloc,load,readonly,data -I binary -O elf32-avr -B avr:51 tz_names tz_names.o
+	$(OBJCOPY) --rename-section .data=.progmem.data,contents,alloc,load,readonly,data -I binary -O elf32-avr -B avr:51 tz_offset tz_offset.o
+	$(OBJCOPY) --rename-section .data=.progmem.data,contents,alloc,load,readonly,data -I binary -O elf32-avr -B avr:51 tz_zones tz_zones.o
+	$(OBJCOPY) --rename-section .data=.progmem.data,contents,alloc,load,readonly,data -I binary -O elf32-avr -B avr:51 tz_rules tz_rules.o
+	

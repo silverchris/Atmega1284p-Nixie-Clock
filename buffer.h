@@ -1,3 +1,6 @@
+#ifndef _BUFFER_H
+#define _BUFFER_H
+
 typedef struct {
     uint8_t         size;   /* maximum number of elements           */
     uint8_t         start;  /* index of oldest element              */
@@ -16,3 +19,5 @@ int8_t cbIsFull(CircularBuffer *cb);
 void cbWrite(CircularBuffer *cb, char *elem);
 
 void cbRead(CircularBuffer *cb, volatile char *elem);
+
+#endif
