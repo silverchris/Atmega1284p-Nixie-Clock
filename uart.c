@@ -8,6 +8,9 @@
 #include "uart.h"
 #include "buffer.h"
 #include "xbootapi.h"
+#include "ui.h"
+
+extern int ui_flag;
 
 CircularBuffer uart0_rx_buffer;
 CircularBuffer uart0_tx_buffer;
@@ -46,6 +49,12 @@ ISR(USART0_RX_vect){
         xboot_reset();
     }
     cbWrite(&uart0_rx_buffer, &rx);
+    if(rx != 0x0d){
+        printf("%c", rx);
+    }
+    if(rx == '\r'){
+        ui_flag = 1;
+    }
 }
 
 ISR(USART0_UDRE_vect){
@@ -74,9 +83,9 @@ int uart_putchar(char c, FILE *stream){
 }
 
 int uart_getchar(FILE *stream){
-    char c = 0;
+    char c = EOF;//-1;
     if(!cbIsEmpty(uart0_rx_buffer)){
-        cbRead(&uart0_tx_buffer, &c);
+        cbRead(&uart0_rx_buffer, &c);
     }
     return c;
 }

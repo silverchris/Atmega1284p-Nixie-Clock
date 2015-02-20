@@ -13,6 +13,7 @@
 #include "display.h"
 #include "ui.h"
 #include "buffer.h"
+#include "tz.h"
 
 FILE uart_str = FDEV_SETUP_STREAM(uart_putchar, uart_getchar, _FDEV_SETUP_RW);
 
@@ -29,6 +30,7 @@ int main(void){
     TWI_init();
     ds3231_init();
     sysclk_setup();
+    tz_init();
     spi_init();
     display_init();
     setup_ui();

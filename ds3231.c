@@ -10,10 +10,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "twi_master.h"
 #include "ds3231.h"
-#include "time.h"
+
 
 
 static const uint8_t ds3231_init_seq[] PROGMEM = {
@@ -76,24 +77,29 @@ uint8_t ds3231_init(void) {
     }
     else{
         printf("RTC Valid\n");
-        tm tm_struct;
+        struct tm tm_struct;
         ds3231_get(&tm_struct);
-        printf("Years: 2%03u ", tm_struct.tm_year);
-        printf("Month: %u ", tm_struct.tm_mon);
-        printf("Day: %u ", tm_struct.tm_mday);
-        printf("%02u:", tm_struct.tm_hour);
-        printf("%02u:", tm_struct.tm_min);
-        printf("%02u\n", tm_struct.tm_sec);
+        char time[25];
+        strftime(time, sizeof(time), "%Y-%m-%d %H:%M:%S\n", &tm_struct);
+        printf(time);
+//         printf("Years: 2%03u ", tm_struct.tm_year);
+//         printf("Month: %u ", tm_struct.tm_mon);
+//         printf("Day: %u ", tm_struct.tm_mday);
+//         printf("%02u:", tm_struct.tm_hour);
+//         printf("%02u:", tm_struct.tm_min);
+//         printf("%02u\n", tm_struct.tm_sec);
         ds3231_temperature temp;
         ds3231_get_temp(&temp);
         printf("DS3231 Temperature: %d.%dC\n", temp.temperature, temp.fraction);
+        
     }
     return 0;
 }
 
 
 /* Set ds3231 time */
-void ds3231_set(tm *tm_struct) {
+void ds3231_set(struct tm *tm_struct) {
+    //TODO: Fix so that we actually set the full year in the RTC
     while(TWI_busy){};
 
     /* word address for time set start */
@@ -106,7 +112,7 @@ void ds3231_set(tm *tm_struct) {
     TWI_buffer_out[4] = 0x00;//skip this reg
     TWI_buffer_out[5] = (0x3f & dectobcd(tm_struct->tm_mday));
     TWI_buffer_out[6] = (0x1f & dectobcd(tm_struct->tm_mon+1));
-    TWI_buffer_out[7] = (dectobcd(tm_struct->tm_year));
+    TWI_buffer_out[7] = (dectobcd(tm_struct->tm_year-100));
     /* write (UTC) time to chip */
     TWI_master_start_write(DS3231_ADDR, 8);
     
@@ -115,7 +121,8 @@ void ds3231_set(tm *tm_struct) {
 }
 
 /* Get time from ds3231*/
-void ds3231_get(tm *tm_struct){
+void ds3231_get(struct tm *tm_struct){
+    //TODO: Fix so that we actually get the whole year from the rtc
     while(TWI_busy){};
     
     TWI_buffer_out[0] = 0x00;
@@ -130,7 +137,7 @@ void ds3231_get(tm *tm_struct){
 
     tm_struct->tm_mday = BCDToDecimal(0x3f & TWI_buffer_in[4]);
     tm_struct->tm_mon = BCDToDecimal(0x1f & TWI_buffer_in[5])-1;
-    tm_struct->tm_year = BCDToDecimal(TWI_buffer_in[6]);
+    tm_struct->tm_year = BCDToDecimal(TWI_buffer_in[6])+100;
     
     tm_struct->tm_wday = -1;
     tm_struct->tm_yday = -1;

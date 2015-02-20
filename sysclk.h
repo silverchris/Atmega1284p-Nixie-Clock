@@ -1,6 +1,8 @@
-#ifndef _SYSCKL_H_
-#define _SYSCKL_H_
+#ifndef _SYSCLK_H_
+#define _SYSCLK_H_
+#include <time.h>
 
-void rtc_timer_setup(void);
+void sysclk_setup(void);
+time_t sys_seconds;
 
 #endif

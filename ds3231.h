@@ -1,4 +1,4 @@
-#include "time.h"
+#include <time.h>
 
 #ifndef _DS3231_H_
 #define _DS3231_H_
@@ -21,8 +21,8 @@ typedef struct{
 } ds3231_temperature;
 
 uint8_t ds3231_init(void);
-void ds3231_set(tm *);
-void ds3231_get(tm *);
+void ds3231_set(struct tm *);
+void ds3231_get(struct tm *);
 float ds3231_convert_temp(uint8_t, uint8_t);
 void ds3231_get_temp(ds3231_temperature *);
 #endif

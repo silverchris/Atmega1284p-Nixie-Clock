@@ -3,8 +3,9 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#include "time.h"
+#include <time.h>
 #include "display.h"
+#include "ds3231.h"
 
 time_t sys_seconds;//seconds since power on
 uint16_t sys_milli;//milliseconds inbetween seconds
@@ -22,18 +23,18 @@ ISR (TIMER1_COMPA_vect){
             led = 0;
             PORTA &= ~(1<<PA4);
         }
-        uint8_t array[6];
-        tm tm_struct;
-        gmtime_r(&sys_seconds, &tm_struct);
-        utc_digits(&tm_struct, &array[0]);
-        display(&array[0]);
+//         uint8_t array[6];
+//         tm tm_struct;
+//         gmtime_r(&sys_seconds, &tm_struct);
+//         utc_digits(&tm_struct, &array[0]);
+//         display(&array[0]);
     }
     else{
         sys_milli++;
     }
 }
 
-void rtc_timer_setup(void){
+void sysclk_setup(void){
     //set up  timer here to match at 32 and clear timer on match
     TCCR1A = 0x00;
     TCCR1B |= (1 << WGM12)|(1 << CS12)|(1 << CS11)|(1 << CS10);//Enable CTC mode and external clock source on rising edge
@@ -43,4 +44,11 @@ void rtc_timer_setup(void){
     TIMSK1 |= (1 << OCIE1A);//setup Match interupt
     DDRA |= (1<<PA4); //set direction for blinking led
     led = 0;
+    struct tm tm_struct;
+    ds3231_get(&tm_struct);
+//     sys_seconds = 1424399080-UNIX_OFFSET; //mk_gmtime(&tm_struct);
+//     sys_seconds = 1430697600-UNIX_OFFSET;
+    sys_seconds = 1425797990-UNIX_OFFSET;//Just before DST for EST
+//     sys_seconds = 1425945600-UNIX_OFFSET;
+//     sys_seconds = 1446357590-UNIX_OFFSET; //JUST BEFORE DST ENDS
 }
