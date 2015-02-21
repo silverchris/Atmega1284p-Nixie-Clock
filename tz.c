@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include <avr/pgmspace.h>
+#include <avr/eeprom.h>
 
 #include <time.h>
 #include "tz.h"
@@ -31,6 +32,8 @@ extern uint_farptr_t _binary_tz_rules_size;
 extern time_t sys_seconds;
 
 extern long __utc_offset;
+
+uint16_t EEMEM TZ_EEPROM = 0;
 
 uint16_t TZ;
 uint16_t LAST_DST;
@@ -359,10 +362,16 @@ void list_zones(void){
         }
     }
 }
-            
+
+uint16_t tz_update(char *zone_name){
+    uint16_t zone = zone_by_name(zone_name);
+    eeprom_update_word(&TZ_EEPROM, zone);
+    tz_init();
+    return zone;
+}
 
 void tz_init(void){
-    TZ = 453;
+    TZ = eeprom_read_word(&TZ_EEPROM);
     LAST_DST_UPDATE = 0;
     set_zone(get_offset(sys_seconds));
     set_dst(get_dst);

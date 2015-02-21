@@ -105,9 +105,10 @@ void run_ui(void){
             }
             if(sscanf(line, "%s", name)){
                 if(strlen(name)>3){
-                    printf("%s\n", name);
-                    printf("Zone: %u\n", zone_by_name(name));
-                    ui_end();
+                    if(tz_update(name)){
+                        printf("Set %s\n", name);
+                        ui_end();
+                    }
                 }
             }
             break;
