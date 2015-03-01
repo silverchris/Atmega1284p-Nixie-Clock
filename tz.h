@@ -25,6 +25,8 @@ int32_t get_offset(time_t t);
 
 uint16_t zone_by_name(char *zone_name);
 
+uint16_t zone_by_hash(char *zone_name);
+
 void list_zones(void);
 
 uint16_t tz_update(char *zone_name);

@@ -30,6 +30,7 @@ void setup_ui(void){
     ui_mode = UI_MODE_MAIN;
     printf("\nPlease Select an Option\n");
     printf("\t 1: Display time\n");
+    printf("\t 2: Set Timezone\n");
     printf("Option #>");
 }
 
@@ -54,7 +55,7 @@ void ui_end(void){
 void run_ui(void){
     ui_flag = 0;
     int i;
-    char name[30];// = "America/Toronto";
+    char name[30] = "";
     switch(ui_mode){
         case UI_MODE_MAIN:
             if(fgets(line, sizeof line - 1, stdin) == NULL){
@@ -90,25 +91,26 @@ void run_ui(void){
             ui_end();
             break;
         case UI_MODE_TZ:
-            printf("\nPlease Enter a Timezone\nl - to list\n! - to exit\n>");
             if(fgets(line, sizeof line - 1, stdin) == NULL){
                 _NOP();//ui_mode = UI_MODE_BUILD_LINE;
             }
-            if(sscanf(line, "%c", &i)){
-                if((char)i == '!'){
+            if(sscanf(line, "%s", name)){
+                printf("%s\n", name);
+                if(name[0] == '!'){
                     ui_end();
                 }
-                if((char)i == 'l'){
+                else if(name[0] == 'l'){
                     list_zones();
                     printf(">");
                 }
-            }
-            if(sscanf(line, "%s", name)){
-                if(strlen(name)>3){
+                else if(strlen(name)>3){
                     if(tz_update(name)){
                         printf("Set %s\n", name);
                         ui_end();
                     }
+                }
+                else{
+                    printf("\nPlease Enter a Timezone\nl - to list\n! - to exit\n>");
                 }
             }
             break;

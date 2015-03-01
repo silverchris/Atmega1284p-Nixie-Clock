@@ -29,7 +29,12 @@ extern uint_farptr_t _binary_tz_rules_start;
 extern uint_farptr_t _binary_tz_rules_end;
 extern uint_farptr_t _binary_tz_rules_size;
 
+extern uint_farptr_t _binary_tz_hash_start;
+extern uint_farptr_t _binary_tz_hash_end;
+extern uint_farptr_t _binary_tz_hash_size;
+
 extern time_t sys_seconds;
+extern uint16_t sys_milli;
 
 extern long __utc_offset;
 
@@ -50,7 +55,6 @@ uint8_t week_day(int16_t year, uint8_t month, uint8_t d){
 }
 
 void wdays_in_month(uint8_t (*days)[5], int16_t year, uint8_t month, uint8_t day){
-    uint8_t first = week_day(year, month, 1);
     uint8_t last_day = month_length(year, month);
     uint8_t i;
     uint8_t c = 0;
@@ -85,7 +89,7 @@ uint8_t last(uint8_t (*days)[5]){
 }
 
 uint8_t decode_day(tz_rule *rule, uint8_t year){
-    uint8_t rvalue;
+    uint8_t rvalue = 0;
     uint8_t days[5] = {0, 0, 0, 0};
     if(strlen(rule->day) <= 2){
         rvalue = atoi(rule->day);
@@ -151,7 +155,7 @@ void read_zone(uint16_t location, tz_zone *zone){
 
 void read_rule(uint16_t location, tz_rule *rule){
     char temp[15];
-    char *ptr = &temp;
+    char *ptr = &temp[0];
     uint_farptr_t addr = &_binary_tz_rules_start;
     addr = addr+(location*15);
     memcpy_PF(&temp, addr, 15);
@@ -336,7 +340,38 @@ void get_name(char string[30], int count){
     strncpy_PF(string, ptr, 29);
 }
 
+uint32_t hash(char *str){
+    uint32_t hash = 5381;
+    int c;
+
+    while (c = *str++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return hash;
+}
+
+uint16_t zone_by_hash(char *zone_name){
+    printf("\nStart %lu %u\n", sys_seconds, sys_milli);
+    printf("%u\n", sizeof(&_binary_tz_hash_start));
+    uint_farptr_t ptr = &_binary_tz_offset_start;
+    uint_farptr_t hashptr = &_binary_tz_hash_start;
+    uint16_t count = (((uint16_t)&_binary_tz_offset_size)/2)-1;
+    uint32_t name_hash = hash(zone_name);
+    uint32_t test_hash;
+    uint16_t i;
+    for(i=0;i<=count;i++){
+        test_hash = pgm_read_dword(hashptr+(i*4));
+        if(name_hash == test_hash){
+            printf("End %lu %u\n", sys_seconds, sys_milli);
+            return pgm_read_word(ptr+(2*i));
+        }
+    }
+    printf("End %lu %u\n", sys_seconds, sys_milli);
+    return 0;
+}
+
 uint16_t zone_by_name(char *zone_name){
+    printf("\nStart %lu %u\n", sys_seconds, sys_milli);
     uint_farptr_t ptr = &_binary_tz_offset_start;
     uint16_t count = (((uint16_t)&_binary_tz_offset_size)/2)-1;
     uint16_t i;
@@ -344,9 +379,11 @@ uint16_t zone_by_name(char *zone_name){
     for(i=0;i<=count;i++){
         get_name(name, i);
         if(!strcmp(zone_name, name)){
+            printf("End %lu %u\n", sys_seconds, sys_milli);
             return pgm_read_word(ptr+(2*i));
         }
     }
+    printf("End %lu %u\n", sys_seconds, sys_milli);
     return 0;
 }
 
@@ -364,7 +401,7 @@ void list_zones(void){
 }
 
 uint16_t tz_update(char *zone_name){
-    uint16_t zone = zone_by_name(zone_name);
+    uint16_t zone = zone_by_hash(zone_name);
     eeprom_update_word(&TZ_EEPROM, zone);
     tz_init();
     return zone;
@@ -377,34 +414,3 @@ void tz_init(void){
     set_dst(get_dst);
     get_dst(&sys_seconds, &__utc_offset);
 }
-
-// void test(void){
-//     uint_farptr_t ptr = &_binary_tz_offset_start;
-//     char name[30];
-//     uint16_t i;
-//     uint16_t count = (((uint16_t)&_binary_tz_offset_size)/2)-1;
-//     tz_zone zone;
-//     int flag = 1;
-//     time_t seconds = 189406800;
-//     TZ = 453;
-//     printf("%i\n", get_offset(sys_seconds));
-// //     for(i=0;i<=count;i++){
-// //         get_name(name, i);
-// //         TZ =  pgm_read_word(ptr+(2*i));
-// // //         printf("%s:%i\n", name, get_offset(seconds));
-// //         printf("%s: %u\n",name, TZ);
-// // //         flag = 1;
-// // //         read_zone(location, &zone);
-// // //         print_zone(&zone);
-// // //         while(flag){
-// // //             read_zone(location, &zone);
-// // //             print_zone(&zone);
-// // //             if((zone.flags&0x80)>>7){
-// // //                 flag = 0;
-// // //             }
-// // //             location++;
-// // //             _delay_ms(20);
-// // //         }
-// //         _delay_ms(100);
-// //     }
-// }

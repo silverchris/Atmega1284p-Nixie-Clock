@@ -14,10 +14,12 @@
 #include "ui.h"
 #include "buffer.h"
 #include "tz.h"
+#include "gps.h"
 
 FILE uart_str = FDEV_SETUP_STREAM(uart_putchar, uart_getchar, _FDEV_SETUP_RW);
 
 extern int ui_flag;
+extern int gps_flag;
 
 int main(void){
     setup_uarts();
@@ -35,6 +37,9 @@ int main(void){
     display_init();
     setup_ui();
     while(1){
+        if(gps_flag){
+            run_gps();
+        }
         if(ui_flag){
             run_ui();
         }

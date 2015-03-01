@@ -11,9 +11,12 @@
 #include "ui.h"
 
 extern int ui_flag;
+extern int gps_flag;
 
 CircularBuffer uart0_rx_buffer;
 CircularBuffer uart0_tx_buffer;
+
+CircularBuffer uart1_rx_buffer;
 
 static void init_uart0(void){
     PRR0 &= ~(1 << PRUSART0); 
@@ -41,6 +44,8 @@ static void init_uart1(void){
     #else
     UCSR1A &= ~(1 << U2X1);
     #endif
+    UCSR1B = (1<<RXEN1)|(0<<UCSZ12)|(1<<RXCIE1);
+    UCSR1C = (1<<UCSZ11)|(1<<UCSZ10);
 }
 
 ISR(USART0_RX_vect){
@@ -57,6 +62,14 @@ ISR(USART0_RX_vect){
     }
 }
 
+ISR(USART1_RX_vect){
+    char rx = UDR1;
+    cbWrite(&uart1_rx_buffer, &rx);
+    if(rx == '\n'){
+        gps_flag = 1;
+    }
+}
+
 ISR(USART0_UDRE_vect){
     if(cbIsEmpty(uart0_tx_buffer)){
         UCSR0B &= ~(1<<UDRIE0);
@@ -68,8 +81,10 @@ ISR(USART0_UDRE_vect){
 
 void setup_uarts(void){
     cbInit(&uart0_rx_buffer, UART_BUFFER_SIZE);
-    cbInit(&uart0_tx_buffer, UART_BUFFER_SIZE);    
+    cbInit(&uart0_tx_buffer, UART_BUFFER_SIZE);
+    cbInit(&uart1_rx_buffer, UART_BUFFER_SIZE); 
     init_uart0();
+    init_uart1();
 }
 
 int uart_putchar(char c, FILE *stream){
