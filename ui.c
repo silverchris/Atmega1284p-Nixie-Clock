@@ -36,14 +36,16 @@ void setup_ui(void){
 
 void display_time(void){
     struct tm tm_struct;
-    gmtime_r(&sys_seconds, &tm_struct);
+    time_t seconds;
+    time(&seconds);
+    gmtime_r(&seconds, &tm_struct);
     char time[31];
     strftime(time, sizeof(time), "UTC:   %Y-%m-%d %H:%M:%S\n", &tm_struct);
     printf(time);
-    localtime_r(&sys_seconds, &tm_struct);
+    localtime_r(&seconds, &tm_struct);
     strftime(time, sizeof(time), "Local: %Y-%m-%d %H:%M:%S\n", &tm_struct);
     printf(time);
-    printf("Seconds: %lu\n", sys_seconds);
+    printf("Seconds: %lu\n", seconds);
     ui_mode = UI_MODE_MAIN;
 }
 

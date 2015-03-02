@@ -33,9 +33,6 @@ extern uint_farptr_t _binary_tz_hash_start;
 extern uint_farptr_t _binary_tz_hash_end;
 extern uint_farptr_t _binary_tz_hash_size;
 
-extern time_t sys_seconds;
-extern uint16_t sys_milli;
-
 extern long __utc_offset;
 
 uint16_t EEMEM TZ_EEPROM = 0;
@@ -217,7 +214,9 @@ int get_dst(const time_t * timer, int32_t * z){
     time_t t;
     t = *timer;
     struct tm tm_struct;
-    gmtime_r(&sys_seconds, &tm_struct);
+    time_t seconds;
+    time(&seconds);
+    gmtime_r(&seconds, &tm_struct);
     uint8_t year = tm_struct.tm_year-100;
 #ifdef DEBUG
     printf("Year: %u\n", year);
@@ -305,9 +304,9 @@ int get_dst(const time_t * timer, int32_t * z){
     print_rule(&last_rule);
 #endif
     int dst = (last_rule.save*15)*60;
-    if(dst != LAST_DST && LAST_DST_UPDATE+ONE_HOUR < sys_seconds){
+    if(dst != LAST_DST && LAST_DST_UPDATE+ONE_HOUR < seconds){
         LAST_DST = dst;
-        LAST_DST_UPDATE = sys_seconds;
+        LAST_DST_UPDATE = seconds;
     }
     return dst;
 }
@@ -351,8 +350,6 @@ uint32_t hash(char *str){
 }
 
 uint16_t zone_by_hash(char *zone_name){
-    printf("\nStart %lu %u\n", sys_seconds, sys_milli);
-    printf("%u\n", sizeof(&_binary_tz_hash_start));
     uint_farptr_t ptr = &_binary_tz_offset_start;
     uint_farptr_t hashptr = &_binary_tz_hash_start;
     uint16_t count = (((uint16_t)&_binary_tz_offset_size)/2)-1;
@@ -362,16 +359,13 @@ uint16_t zone_by_hash(char *zone_name){
     for(i=0;i<=count;i++){
         test_hash = pgm_read_dword(hashptr+(i*4));
         if(name_hash == test_hash){
-            printf("End %lu %u\n", sys_seconds, sys_milli);
             return pgm_read_word(ptr+(2*i));
         }
     }
-    printf("End %lu %u\n", sys_seconds, sys_milli);
     return 0;
 }
 
 uint16_t zone_by_name(char *zone_name){
-    printf("\nStart %lu %u\n", sys_seconds, sys_milli);
     uint_farptr_t ptr = &_binary_tz_offset_start;
     uint16_t count = (((uint16_t)&_binary_tz_offset_size)/2)-1;
     uint16_t i;
@@ -379,11 +373,9 @@ uint16_t zone_by_name(char *zone_name){
     for(i=0;i<=count;i++){
         get_name(name, i);
         if(!strcmp(zone_name, name)){
-            printf("End %lu %u\n", sys_seconds, sys_milli);
             return pgm_read_word(ptr+(2*i));
         }
     }
-    printf("End %lu %u\n", sys_seconds, sys_milli);
     return 0;
 }
 
@@ -410,7 +402,9 @@ uint16_t tz_update(char *zone_name){
 void tz_init(void){
     TZ = eeprom_read_word(&TZ_EEPROM);
     LAST_DST_UPDATE = 0;
-    set_zone(get_offset(sys_seconds));
+    time_t seconds;
+    time(&seconds);
+    set_zone(get_offset(seconds));
     set_dst(get_dst);
-    get_dst(&sys_seconds, &__utc_offset);
+    get_dst(&seconds, &__utc_offset);
 }

@@ -36,6 +36,7 @@ int main(void){
     spi_init();
     display_init();
     setup_ui();
+    pps_enable();
     while(1){
         if(gps_flag){
             run_gps();

@@ -4,12 +4,17 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <avr/interrupt.h>
+#include <avr/cpufunc.h>
+
+
 #include "buffer.h"
 #include "gps.h"
 
-int gps_flag;
 extern CircularBuffer uart1_rx_buffer;
-extern time_t sys_seconds;
+
+int gps_flag;
+time_t gps_seconds;
 
 time_t zda(char *data){
     //TODO: Get local offset from GPS data
@@ -48,13 +53,13 @@ time_t zda(char *data){
         token = strtok(NULL, ",");
     }
     return mk_gmtime(&tm_struct);
-    printf("%s", asctime(&tm_struct));
-    printf("%li\n", local_offset);
 }
 
 time_t gga(char *data){
     struct tm tm_struct;
-    gmtime_r(&sys_seconds, &tm_struct);
+    time_t seconds;
+    time(&seconds);
+    gmtime_r(&seconds, &tm_struct);
     char *token = &data[0];
     int i;
     uint8_t valid = 0;
@@ -71,14 +76,19 @@ time_t gga(char *data){
         }
         token = strtok(NULL, ",");
     }
-    return mk_gmtime(&tm_struct);
-    printf("%s", asctime(&tm_struct));
-    printf("%u\n", valid);
+    if(valid){
+        return mk_gmtime(&tm_struct);
+    }
+    else{
+        return 0;
+    }
 }
 
 time_t rmc(char *data){
     struct tm tm_struct;
-    gmtime_r(&sys_seconds, &tm_struct);
+    time_t seconds;
+    time(&seconds);
+    gmtime_r(&seconds, &tm_struct);
     char *token = &data[0];
     int i;
     uint8_t valid = 0;
@@ -100,9 +110,12 @@ time_t rmc(char *data){
         }
         token = strtok(NULL, ",");
     }
-    return mk_gmtime(&tm_struct);
-    printf("%s", asctime(&tm_struct));
-    printf("%u\n", valid);
+    if(valid){
+        return mk_gmtime(&tm_struct);
+    }
+    else{
+        return 0;
+    }
 }
 
 uint8_t check_crc(char *data){
@@ -120,7 +133,6 @@ void run_gps(void){
     gps_flag = 0;
     char data[100] = {0};
     uint8_t l = 0;
-    time_t gps_seconds;
     while(!cbIsEmpty(uart1_rx_buffer)){
         l = strlen(data);
         if(l<100){
@@ -149,4 +161,14 @@ void run_gps(void){
     struct tm tm_struct;
     gmtime_r(&gps_seconds, &tm_struct);
     printf("%s\n", asctime(&tm_struct));
+}
+
+void pps_enable(void){
+    //TODO: Probably take into account the timestamp/last message is for the previous second
+    EICRA = (1<<ISC11)|(1<<ISC10);
+    EIMSK = (1<<INT1);
+}
+
+ISR(INT1_vect){
+    printf("PPS\n");
 }

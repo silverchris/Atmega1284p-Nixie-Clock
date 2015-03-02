@@ -7,13 +7,12 @@
 #include "display.h"
 #include "ds3231.h"
 
-time_t sys_seconds;//seconds since power on
 uint16_t sys_milli;//milliseconds inbetween seconds
 uint8_t led;
 
 ISR (TIMER1_COMPA_vect){
     if(sys_milli == 1024){
-        sys_seconds++;
+        system_tick();
         sys_milli = 0;
         if(led == 0){
             PORTA |= (1<<PA4);
@@ -46,9 +45,9 @@ void sysclk_setup(void){
     led = 0;
     struct tm tm_struct;
     ds3231_get(&tm_struct);
-//     sys_seconds = 1424399080-UNIX_OFFSET; //mk_gmtime(&tm_struct);
-//     sys_seconds = 1430697600-UNIX_OFFSET;
-    sys_seconds = 1425797990-UNIX_OFFSET;//Just before DST for EST
-//     sys_seconds = 1425945600-UNIX_OFFSET;
-//     sys_seconds = 1446357590-UNIX_OFFSET; //JUST BEFORE DST ENDS
+//     1424399080-UNIX_OFFSET; //mk_gmtime(&tm_struct);
+//     1430697600-UNIX_OFFSET;
+    set_system_time(1425797990-UNIX_OFFSET);//Just before DST for EST
+//     1425945600-UNIX_OFFSET;
+//     1446357590-UNIX_OFFSET; //JUST BEFORE DST ENDS
 }
