@@ -64,7 +64,7 @@ void run_ui(void){
                 _NOP();//ui_mode = UI_MODE_BUILD_LINE;
             }
             printf("\n");
-            if(sscanf(line, "%d", &i)){
+            if(sscanf(line, "%02d", &i)){
                 i = i+10;
                 if(i > 10 && i < 13){
                     ui_mode = i;
@@ -96,7 +96,7 @@ void run_ui(void){
             if(fgets(line, sizeof line - 1, stdin) == NULL){
                 _NOP();//ui_mode = UI_MODE_BUILD_LINE;
             }
-            if(sscanf(line, "%s", name)){
+            if(sscanf(line, "%29s", name)){
                 printf("%s\n", name);
                 if(name[0] == '!'){
                     ui_end();

@@ -8,7 +8,7 @@
 MCU = atmega1284p
 FORMAT = ihex
 TARGET = main
-SRC = $(TARGET).c uart.c buffer.c xbootapi.c twi_master.c ds3231.c sysclk.c spi.c display.c ui.c tz.c
+SRC = $(TARGET).c uart.c buffer.c xbootapi.c twi_master.c ds3231.c sysclk.c spi.c display.c ui.c tz.c gps.c
 ASRC = 
 OPT = 
 
@@ -186,7 +186,7 @@ extcoff: $(TARGET).elf
 
 # Link: create ELF output file from object files.
 $(TARGET).elf: $(OBJ)
-	$(CC) $(ALL_CFLAGS) $(OBJ) tz_names.o tz_offset.o tz_zones.o tz_rules.o --output $@ $(LDFLAGS) #  tz_rules.o 
+	$(CC) $(ALL_CFLAGS) $(OBJ) tz_names.o tz_offset.o tz_zones.o tz_rules.o tz_hash.o --output $@ $(LDFLAGS) #  tz_rules.o 
 
 
 # Compile: create object files from C source files.
@@ -230,4 +230,4 @@ tz_o:
 	$(OBJCOPY) --rename-section .data=.progmem.data,contents,alloc,load,readonly,data -I binary -O elf32-avr -B avr:51 tz_offset tz_offset.o
 	$(OBJCOPY) --rename-section .data=.progmem.data,contents,alloc,load,readonly,data -I binary -O elf32-avr -B avr:51 tz_zones tz_zones.o
 	$(OBJCOPY) --rename-section .data=.progmem.data,contents,alloc,load,readonly,data -I binary -O elf32-avr -B avr:51 tz_rules tz_rules.o
-	
+	$(OBJCOPY) --rename-section .data=.progmem.data,contents,alloc,load,readonly,data -I binary -O elf32-avr -B avr:51 tz_hash tz_hash.o	
