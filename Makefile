@@ -8,7 +8,7 @@
 MCU = atmega1284p
 FORMAT = ihex
 TARGET = main
-SRC = $(TARGET).c uart.c buffer.c xbootapi.c twi_master.c ds3231.c sysclk.c spi.c display.c ui.c tz.c gps.c
+SRC = $(TARGET).c uart.c buffer.c xbootapi.c twi_master.c ds3231.c sysclk.c spi.c display.c ui.c tz.c gps.c hash.c
 ASRC = 
 OPT = 
 
@@ -54,7 +54,7 @@ PRINTF_LIB_MIN = -Wl,-u,vfprintf -lprintf_min
 # Floating point printf version (requires MATH_LIB = -lm below)
 PRINTF_LIB_FLOAT = -Wl,-u,vfprintf -lprintf_flt
 
-PRINTF_LIB = 
+PRINTF_LIB =  
 
 # Minimalistic scanf version
 SCANF_LIB_MIN = -Wl,-u,vfscanf -lscanf_min
@@ -79,7 +79,7 @@ MATH_LIB = -lm
 EXTMEMOPTS =
 
 #LDMAP = $(LDFLAGS) -Wl,-Map=$(TARGET).map,--cref
-LDFLAGS = $(EXTMEMOPTS) $(LDMAP) $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
+LDFLAGS = $(EXTMEMOPTS) $(LDMAP) $(PRINTF_LIB_FLOAT) $(SCANF_LIB) $(MATH_LIB)
 
 
 # Programming support using avrdude. Settings and variables.

@@ -35,7 +35,7 @@ static void init_uart0(void){
 
 static void init_uart1(void){
     PRR0 &= ~(1 << PRUSART1); 
-    #define BAUD 9600
+    #define BAUD 4800
     #include <util/setbaud.h>
     UBRR1H = UBRRH_VALUE;
     UBRR1L = UBRRL_VALUE;

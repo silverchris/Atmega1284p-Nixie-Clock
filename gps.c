@@ -10,11 +10,25 @@
 
 #include "buffer.h"
 #include "gps.h"
+#include "sysclk.h"
 
 extern CircularBuffer uart1_rx_buffer;
 
 int gps_flag;
 time_t gps_seconds;
+extern uint16_t sys_milli;
+
+
+uint16_t pps;
+uint16_t pps_last;
+uint16_t pps_tcnt_last;
+uint16_t pps_icr;
+
+int16_t PPS_FILTER_ARRAY[10];
+uint8_t PPS_FILTER_LOC;
+
+uint8_t milli_reset;
+uint8_t pps_count;
 
 time_t zda(char *data){
     //TODO: Get local offset from GPS data
@@ -158,17 +172,58 @@ void run_gps(void){
     else if(!strcmp(token, "$GPRMC")){
         gps_seconds = rmc(token);
     }
-    struct tm tm_struct;
-    gmtime_r(&gps_seconds, &tm_struct);
-    printf("%s\n", asctime(&tm_struct));
 }
 
 void pps_enable(void){
+    PPS_FILTER_LOC = 0;
     //TODO: Probably take into account the timestamp/last message is for the previous second
-    EICRA = (1<<ISC11)|(1<<ISC10);
-    EIMSK = (1<<INT1);
+    TIMSK1 |= (1 << ICIE1);
 }
 
-ISR(INT1_vect){
-    printf("PPS\n");
+
+int16_t pps_filter(void){
+    int16_t ts = 0;
+    int16_t result;
+    int i;
+    if(pps_tcnt_last > pps_icr){
+        ts = (pps_tcnt_last-pps_icr)*-1;
+    }
+    else if(pps_icr > pps_tcnt_last){
+        ts = (pps_icr-pps_tcnt_last);
+    }
+    else if(pps_icr == pps_tcnt_last){
+        ts = 0;
+    }
+    printf("Counter Diff: %u-%u=%i\n", pps_icr, pps_tcnt_last, ts);
+    PPS_FILTER_ARRAY[PPS_FILTER_LOC] = ts;
+    result = 0;
+    for(i=0;i<=9;i++){
+        result += PPS_FILTER_ARRAY[i];
+    }
+    result = result/10;
+    printf("Filter Value: %f\n", (float)result/10.0);
+    if(result > 100 || result < -100){
+        result = 0;
+    }
+    pps_tcnt_last = pps_icr;
+    PPS_FILTER_LOC++;
+    if(PPS_FILTER_LOC == 10){
+        PPS_FILTER_LOC = 0;
+        return result;
+    }
+    else{
+        return 0;
+    }
+}
+
+ISR(TIMER1_CAPT_vect){
+    pps_icr = ICR1;
+    pps = sys_milli;
+    if(!milli_reset && pps_count){
+        sys_milli = 0;
+        TCNT1 = 0;
+        set_system_time(gps_seconds);
+        milli_reset = 1;
+    }
+    pps_count++;
 }

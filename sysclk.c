@@ -3,48 +3,88 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
+#include "main.h"
 #include <time.h>
 #include "display.h"
 #include "ds3231.h"
 
+#include <util/delay.h>
+
+
+#define OCR1A_VAL 4999
+
 uint16_t sys_milli;//milliseconds inbetween seconds
 uint8_t led;
+int second_flag;
+int16_t pending_adj;
+int adj_ready;
+int16_t last_adj;
 
 ISR (TIMER1_COMPA_vect){
-    if(sys_milli == 1024){
+    sys_milli++;
+    if(sys_milli == 1999){
+        if(adj_ready){
+            OCR1A = pending_adj;
+            adj_ready = 0;
+        }
+    }
+    if(sys_milli >= 2000){
+        OCR1A = OCR1A_VAL;
         system_tick();
         sys_milli = 0;
-        if(led == 0){
-            PORTA |= (1<<PA4);
-            led++;
-        }
-        else if(led == 1){
-            led = 0;
-            PORTA &= ~(1<<PA4);
-        }
+        
+        //Turn on the LED, and set up timer2 to interrupt
+        PORTA |= (1<<PA4);
+        TCNT2 = 10;
+        TIFR2 = 0xFF;
+        TIMSK2 = (1 << TOIE2);
+        
 //         uint8_t array[6];
 //         tm tm_struct;
 //         gmtime_r(&sys_seconds, &tm_struct);
 //         utc_digits(&tm_struct, &array[0]);
 //         display(&array[0]);
+        second_flag = 1;
     }
-    else{
-        sys_milli++;
-    }
+//     _delay_us(10);
+//     TCCR1C = (1 << FOC1A); //Clock debug shit
 }
 
+ISR (TIMER2_OVF_vect){
+    //turn off LED
+    TIMSK2 = 0;
+    PORTA &= ~(1<<PA4);
+}
+
+void sysclk_adj(int16_t adj){
+    last_adj += adj;
+    uint16_t count;
+    count = OCR1A_VAL;
+    count += last_adj;
+    printf("Adjusting system clock to: %u\n", count);
+    pending_adj = count;
+    adj_ready = 1;
+}
 void sysclk_setup(void){
-    //set up  timer here to match at 32 and clear timer on match
-    TCCR1A = 0x00;
-    TCCR1B |= (1 << WGM12)|(1 << CS12)|(1 << CS11)|(1 << CS10);//Enable CTC mode and external clock source on rising edge
-    TCCR1C = 0xFF;
+    //Divide 10mhz by 8, and then again by 1250 == 1millisecond
+    
+    //Set up timer2 for turning the LED off
+    TCCR2A = (1 << WGM20);
+    TCCR2B = (1 << CS22)|(1 << CS21)|(1 << CS20);
+    TCNT2 = 0;
+    
+    sys_milli = 0;
+    TCCR1A = (1 << COM1A0);//= 0x00;
+    TCCR1B = (1 << ICES1)|(0 << ICNC1)|(1 << WGM12)|(0 << CS12)|(0 << CS11)|(1 << CS10);//Enable CTC mode and clock from osc
+    TCCR1C = 0x00;
+    OCR1A = 4999;
     TCNT1 = 0;
-    OCR1A = 32; 
     TIMSK1 |= (1 << OCIE1A);//setup Match interupt
     DDRA |= (1<<PA4); //set direction for blinking led
+    DDRD |= (1<<PD5); //Set direction for OC1A, for sysclock testing
     led = 0;
     struct tm tm_struct;
-    ds3231_get(&tm_struct);
+//     ds3231_get(&tm_struct);
 //     1424399080-UNIX_OFFSET; //mk_gmtime(&tm_struct);
 //     1430697600-UNIX_OFFSET;
     set_system_time(1425797990-UNIX_OFFSET);//Just before DST for EST

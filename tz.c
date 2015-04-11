@@ -8,7 +8,7 @@
 
 #include <time.h>
 #include "tz.h"
-
+#include "hash.h"
 #include "main.h"
 #include <util/delay.h>
 
@@ -337,16 +337,6 @@ void get_name(char string[30], int count){
         }
     }
     strncpy_PF(string, ptr, 29);
-}
-
-uint32_t hash(char *str){
-    uint32_t hash = 5381;
-    int c;
-
-    while((c = *str++)){
-        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-    }
-    return hash;
 }
 
 uint16_t zone_by_hash(char *zone_name){

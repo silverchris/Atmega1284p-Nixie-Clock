@@ -11,18 +11,19 @@
 #include "sysclk.h"
 #include "uart.h"
 #include "tz.h"
+#include "hash.h"
 // #include <util/delay.h>
 
 
 static uint8_t ui_mode;
-char line[30];
 int ui_flag;
 
 #define UI_MODE_MAIN 0
 #define UI_MODE_END 1
 #define UI_MODE_BUILD_LINE 2
 #define UI_MODE_DISPLAY_TIME 11
-#define UI_MODE_TZ 12
+#define UI_MODE_SET 12
+#define UI_MODE_TZ 13
 
 
 void setup_ui(void){
@@ -30,7 +31,8 @@ void setup_ui(void){
     ui_mode = UI_MODE_MAIN;
     printf("\nPlease Select an Option\n");
     printf("\t 1: Display time\n");
-    printf("\t 2: Set Timezone\n");
+    printf("\t 2: Set Time\n");
+    printf("\t 3: Set Timezone\n");
     printf("Option #>");
 }
 
@@ -57,6 +59,7 @@ void ui_end(void){
 void run_ui(void){
     ui_flag = 0;
     int i;
+    char line[30];
     char name[30] = "";
     switch(ui_mode){
         case UI_MODE_MAIN:
