@@ -69,7 +69,7 @@ void run_ui(void){
             printf("\n");
             if(sscanf(line, "%02d", &i)){
                 i = i+10;
-                if(i > 10 && i < 13){
+                if(i > 10 && i <= 13){
                     ui_mode = i;
                     ui_flag = 1;
                 }

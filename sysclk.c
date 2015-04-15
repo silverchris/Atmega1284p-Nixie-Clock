@@ -7,29 +7,32 @@
 #include <time.h>
 #include "display.h"
 #include "ds3231.h"
+#include "sysclk.h"
 
 #include <util/delay.h>
 
 
-#define OCR1A_VAL 4999
 
 uint16_t sys_milli;//milliseconds inbetween seconds
 uint8_t led;
 int second_flag;
 int16_t pending_adj;
 int adj_ready;
-int16_t last_adj;
+int16_t sysclk_adj;
 
 ISR (TIMER1_COMPA_vect){
     sys_milli++;
-    if(sys_milli == 1999){
+    if(sys_milli == 500){
         if(adj_ready){
-            OCR1A = pending_adj;
+            OCR1A = sysclk_adj;
             adj_ready = 0;
         }
     }
-    if(sys_milli >= 2000){
+    else if (sys_milli == 501){
         OCR1A = OCR1A_VAL;
+    }
+    if(sys_milli >= 1000){
+//         OCR1A = OCR1A_VAL;
         system_tick();
         sys_milli = 0;
         
@@ -38,12 +41,6 @@ ISR (TIMER1_COMPA_vect){
         TCNT2 = 10;
         TIFR2 = 0xFF;
         TIMSK2 = (1 << TOIE2);
-        
-//         uint8_t array[6];
-//         tm tm_struct;
-//         gmtime_r(&sys_seconds, &tm_struct);
-//         utc_digits(&tm_struct, &array[0]);
-//         display(&array[0]);
         second_flag = 1;
     }
 //     _delay_us(10);
@@ -56,16 +53,9 @@ ISR (TIMER2_OVF_vect){
     PORTA &= ~(1<<PA4);
 }
 
-void sysclk_adj(int16_t adj){
-    last_adj += adj;
-    uint16_t count;
-    count = OCR1A_VAL;
-    count += last_adj;
-    printf("Adjusting system clock to: %u\n", count);
-    pending_adj = count;
-    adj_ready = 1;
-}
+
 void sysclk_setup(void){
+    sysclk_adj = OCR1A_VAL;
     //Divide 10mhz by 8, and then again by 1250 == 1millisecond
     
     //Set up timer2 for turning the LED off
@@ -77,7 +67,7 @@ void sysclk_setup(void){
     TCCR1A = (1 << COM1A0);//= 0x00;
     TCCR1B = (1 << ICES1)|(0 << ICNC1)|(1 << WGM12)|(0 << CS12)|(0 << CS11)|(1 << CS10);//Enable CTC mode and clock from osc
     TCCR1C = 0x00;
-    OCR1A = 4999;
+    OCR1A = OCR1A_VAL;
     TCNT1 = 0;
     TIMSK1 |= (1 << OCIE1A);//setup Match interupt
     DDRA |= (1<<PA4); //set direction for blinking led

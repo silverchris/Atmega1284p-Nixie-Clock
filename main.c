@@ -16,6 +16,7 @@
 #include "buffer.h"
 #include "tz.h"
 #include "gps.h"
+#include "display.h"
 
 FILE uart_str = FDEV_SETUP_STREAM(uart_putchar, uart_getchar, _FDEV_SETUP_RW);
 
@@ -30,6 +31,8 @@ extern uint16_t pps_icr;
 extern time_t gps_seconds;
 extern time_t seconds;
 
+int8_t utc_toggle;
+
 int main(void){
     setup_uarts();
     stdout = stdin = &uart_str;
@@ -38,23 +41,38 @@ int main(void){
     uint16_t xbootver;
     xboot_get_version(&xbootver);
     printf("xboot Version:    %d.%d\n", xbootver>>8, xbootver&0xFF);
-//     TWI_init();
-//     ds3231_init();
+    TWI_init();
+    ds3231_init();
     sysclk_setup();
     tz_init();
-//     spi_init();
-//     display_init();
+    spi_init();
+    display_init();
     setup_ui();
     pps_enable();
     while(1){
         if(second_flag){
-            printf("PPS at: %u\n", pps);
-            printf("Diff: %u-%u=%i\n", pps_last, pps, pps_last-pps);
-            sysclk_adj(pps_filter());
             second_flag = 0;
-            printf("ICR1: %u\n", pps_icr);
-            pps_last = pps;
-            printf("Sys vs GPS: %lu-%lu = %li\n", time(NULL), gps_seconds, time(NULL)-gps_seconds);
+            pps_filter();
+            //Display stuff temp
+            int8_t array[6];
+            struct tm tm_struct;
+            time_t seconds = time(NULL);
+            if(!(seconds%10)){
+                if(utc_toggle == 1){
+                    utc_toggle = 0;
+                }
+                else{
+                    utc_toggle = 1;
+                }
+            }
+            if(utc_toggle == 0){
+                gmtime_r(&seconds, &tm_struct);
+            }
+            else{
+                localtime_r(&seconds, &tm_struct);
+            }
+            utc_digits(&tm_struct, &array[0]);
+            display(&array[0]);
         }
         if(gps_flag){
             run_gps();

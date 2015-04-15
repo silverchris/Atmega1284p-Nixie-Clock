@@ -11,6 +11,7 @@
 #include "buffer.h"
 #include "gps.h"
 #include "sysclk.h"
+#include "ds3231.h"
 
 extern CircularBuffer uart1_rx_buffer;
 
@@ -24,11 +25,19 @@ uint16_t pps_last;
 uint16_t pps_tcnt_last;
 uint16_t pps_icr;
 
-int16_t PPS_FILTER_ARRAY[10];
+
+#define FILTER_LENGTH 3
+int16_t PPS_FILTER_ARRAY[FILTER_LENGTH];
 uint8_t PPS_FILTER_LOC;
+
 
 uint8_t milli_reset;
 uint8_t pps_count;
+
+uint8_t PPS_DEBUG;
+
+extern int16_t sysclk_adj;
+extern int adj_ready;
 
 time_t zda(char *data){
     //TODO: Get local offset from GPS data
@@ -175,13 +184,14 @@ void run_gps(void){
 }
 
 void pps_enable(void){
+    PPS_DEBUG = 1;
     PPS_FILTER_LOC = 0;
     //TODO: Probably take into account the timestamp/last message is for the previous second
     TIMSK1 |= (1 << ICIE1);
 }
 
 
-int16_t pps_filter(void){
+void pps_filter(void){
     int16_t ts = 0;
     int16_t result;
     int i;
@@ -194,32 +204,45 @@ int16_t pps_filter(void){
     else if(pps_icr == pps_tcnt_last){
         ts = 0;
     }
-    printf("Counter Diff: %u-%u=%i\n", pps_icr, pps_tcnt_last, ts);
+//     printf("Counter Diff: %u-%u=%i\n", pps_icr, pps_tcnt_last, ts);
     PPS_FILTER_ARRAY[PPS_FILTER_LOC] = ts;
     result = 0;
-    for(i=0;i<=9;i++){
+    for(i=0;i<=FILTER_LENGTH-1;i++){
         result += PPS_FILTER_ARRAY[i];
     }
-    result = result/10;
-    printf("Filter Value: %f\n", (float)result/10.0);
-    if(result > 100 || result < -100){
+//     result = result/FILTER_LENGTH;
+    if((result/FILTER_LENGTH) > 200 || (result/FILTER_LENGTH) < -200){
         result = 0;
     }
     pps_tcnt_last = pps_icr;
     PPS_FILTER_LOC++;
-    if(PPS_FILTER_LOC == 10){
+    if(PPS_FILTER_LOC == FILTER_LENGTH){
         PPS_FILTER_LOC = 0;
-        return result;
+//         return resuDlt;
     }
-    else{
-        return 0;
+//     else{
+//         return 0;
+//     }
+    sysclk_adj += result/FILTER_LENGTH;
+    adj_ready = 1;
+    if(PPS_DEBUG == 1){
+            printf("%u,", pps);
+            printf("%f,", (float)result/FILTER_LENGTH);
+            printf("%u,", sysclk_adj);
+            printf("%u,", pps_icr);
+            ds3231_temperature temperature;
+            ds3231_get_temp(&temperature);
+            printf("%lu,%lu,%i.%i\n", time(NULL), gps_seconds, temperature.temperature, temperature.fraction);
     }
 }
 
 ISR(TIMER1_CAPT_vect){
     pps_icr = ICR1;
     pps = sys_milli;
-    if(!milli_reset && pps_count){
+    if(!milli_reset && pps_count == 5){
+        sysclk_adj = OCR1A_VAL;
+    }
+    if(!milli_reset && pps_count == 60){
         sys_milli = 0;
         TCNT1 = 0;
         set_system_time(gps_seconds);
