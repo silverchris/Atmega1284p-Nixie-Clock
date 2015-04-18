@@ -3,5 +3,5 @@
 
 void display(int8_t *);
 void display_init(void);
-void utc_digits(struct tm *tm_struct, uint8_t array[]);
+void utc_digits(struct tm *tm_struct, int8_t array[]);
 #endif

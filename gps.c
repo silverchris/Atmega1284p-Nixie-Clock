@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 #include <avr/interrupt.h>
 #include <avr/cpufunc.h>
@@ -13,6 +14,11 @@
 #include "sysclk.h"
 #include "ds3231.h"
 
+#define FIX_INVALID 0
+#define FIX_ZDA 1
+#define FIX_GGA 2
+#define FIX_RMC 3
+
 extern CircularBuffer uart1_rx_buffer;
 
 int gps_flag;
@@ -21,15 +27,8 @@ extern uint16_t sys_milli;
 
 
 uint16_t pps;
-uint16_t pps_last;
-uint16_t pps_tcnt_last;
-uint16_t pps_icr;
-
-
-#define FILTER_LENGTH 3
-int16_t PPS_FILTER_ARRAY[FILTER_LENGTH];
-uint8_t PPS_FILTER_LOC;
-
+uint16_t tcnt_last;
+uint16_t tcnt;
 
 uint8_t milli_reset;
 uint8_t pps_count;
@@ -38,6 +37,11 @@ uint8_t PPS_DEBUG;
 
 extern int16_t sysclk_adj;
 extern int adj_ready;
+
+uint8_t valid;
+
+int8_t fix_type;
+
 
 time_t zda(char *data){
     //TODO: Get local offset from GPS data
@@ -85,7 +89,6 @@ time_t gga(char *data){
     gmtime_r(&seconds, &tm_struct);
     char *token = &data[0];
     int i;
-    uint8_t valid = 0;
     token = strtok(token+7, ",");//+7 to eat the first bit
     for(i=1;i<=6;i++){
         switch(i){
@@ -114,7 +117,6 @@ time_t rmc(char *data){
     gmtime_r(&seconds, &tm_struct);
     char *token = &data[0];
     int i;
-    uint8_t valid = 0;
     token = strtok(token+7, ",");//+7 to eat the first bit
     for(i=1;i<=6;i++){
         switch(i){
@@ -173,80 +175,170 @@ void run_gps(void){
     char *token;
     token = strtok(data, ",");
     if(!strcmp(token, "$GPGGA")){
-        gps_seconds = gga(token);
+        if(fix_type != FIX_ZDA){
+            gps_seconds = gga(token);
+            fix_type = FIX_GGA;
+        }
+        else{
+            gga(token);
+        }
     }
     else if(!strcmp(token, "$GPZDA")){
         gps_seconds = zda(token);
+        fix_type = FIX_ZDA;
     }
     else if(!strcmp(token, "$GPRMC")){
-        gps_seconds = rmc(token);
+        if(fix_type != FIX_ZDA){
+            gps_seconds = rmc(token);
+            fix_type = FIX_RMC;
+        }
+        else{
+            rmc(token);
+        }
     }
 }
 
+
+
 void pps_enable(void){
+    valid = 0;
+    fix_type = FIX_INVALID;
     PPS_DEBUG = 1;
-    PPS_FILTER_LOC = 0;
     //TODO: Probably take into account the timestamp/last message is for the previous second
     TIMSK1 |= (1 << ICIE1);
 }
 
 
+uint32_t last_val;
+float MovingAverage;
+
 void pps_filter(void){
-    int16_t ts = 0;
-    int16_t result;
-    int i;
-    if(pps_tcnt_last > pps_icr){
-        ts = (pps_tcnt_last-pps_icr)*-1;
+    if(valid == 0){
+        return;
     }
-    else if(pps_icr > pps_tcnt_last){
-        ts = (pps_icr-pps_tcnt_last);
+    int32_t val = (1000000*pps)/100;
+    val += tcnt;
+    int32_t result = val-last_val;
+    
+    if(result >= (998*1000000)/100 && result <= (1000*1000000)/100){
+        result -= (1000*1000000)/100;
     }
-    else if(pps_icr == pps_tcnt_last){
-        ts = 0;
+    if(result <= ((998*1000000)/100)*-1 && result >= ((1000*1000000)/100)*-1){
+        result += (1000*1000000)/100;
     }
-//     printf("Counter Diff: %u-%u=%i\n", pps_icr, pps_tcnt_last, ts);
-    PPS_FILTER_ARRAY[PPS_FILTER_LOC] = ts;
-    result = 0;
-    for(i=0;i<=FILTER_LENGTH-1;i++){
-        result += PPS_FILTER_ARRAY[i];
+    printf("%" PRIi32 "\n", val);
+    printf("%" PRIi32 "\n", last_val);
+    printf("%" PRIi32 "\n", result);
+    printf("%" PRIi32 "\n", (1*1000000)/100);
+    
+    float AmplitudeFactor = .5;//1.0/2.0;
+    float DecayFactor = .62;//1.0-AmplitudeFactor;
+    MovingAverage *= DecayFactor;
+    MovingAverage += AmplitudeFactor * result;
+    printf("%f\n", MovingAverage);
+    if(milli_reset && pps_count > 20){
+        sysclk_adj += round(MovingAverage);
+        adj_ready = 1;
     }
-//     result = result/FILTER_LENGTH;
-    if((result/FILTER_LENGTH) > 200 || (result/FILTER_LENGTH) < -200){
-        result = 0;
-    }
-    pps_tcnt_last = pps_icr;
-    PPS_FILTER_LOC++;
-    if(PPS_FILTER_LOC == FILTER_LENGTH){
-        PPS_FILTER_LOC = 0;
-//         return resuDlt;
-    }
-//     else{
-//         return 0;
-//     }
-    sysclk_adj += result/FILTER_LENGTH;
-    adj_ready = 1;
     if(PPS_DEBUG == 1){
             printf("%u,", pps);
-            printf("%f,", (float)result/FILTER_LENGTH);
+            printf("%u,", tcnt);
+            printf("%li,", result);
+            printf("%f,", MovingAverage);
             printf("%u,", sysclk_adj);
-            printf("%u,", pps_icr);
-            ds3231_temperature temperature;
-            ds3231_get_temp(&temperature);
-            printf("%lu,%lu,%i.%i\n", time(NULL), gps_seconds, temperature.temperature, temperature.fraction);
+            printf("%u,%u\n", valid, fix_type);
     }
+    
+    last_val = val;
+    printf("\n");
 }
 
+// #define FILTER_LENGTH 3
+// int16_t filter[FILTER_LENGTH];
+// float MovingAverage;
+// 
+// void pps_filter(void){
+//     int16_t ts = 0;
+//     if(valid == 0){
+//         return;
+//     }
+//     printf("%u\n ",tcnt);
+//     printf("%u\n", tcnt_last);
+//     printf("%u\n ", tcnt);
+//     printf("%u\n\n", tcnt_last);
+//     if(tcnt_last > tcnt){
+//         printf("tcnt_last > tcnt\n");
+//         ts = ((tcnt_last-tcnt)-OCR1A_VAL)*-1;
+//         printf("%u-%u-%u=%i\n", tcnt_last, tcnt, OCR1A_VAL, ts);
+//         if(ts > 500){
+//             ts = (tcnt_last-tcnt)*-1;
+//             printf("%u-%u=%i\n", tcnt_last, tcnt, ts);
+//         }
+//     }
+//     else if(tcnt_last < tcnt){
+//         ts = (tcnt-tcnt_last);
+//         printf("tcnt_last < tcnt\n");
+//         printf("%u-%u=%i\n", tcnt, tcnt_last, ts);
+//         if(ts < -500){
+//             ts = (tcnt-tcnt_last-OCR1A_VAL);
+//         }
+//     }
+//     
+//     int8_t i;
+//     for(i=0;i<FILTER_LENGTH-1;i++){
+//         filter[i] = filter[i+1];
+//         printf("filter: %i\n", i);
+//     }
+//     filter[FILTER_LENGTH-1] = ts;
+//     float result = 0.0;
+//     for(i=0;i<FILTER_LENGTH;i++){
+//         result += filter[i];
+//     }
+//     printf("Average of %u samples: %f\n", FILTER_LENGTH, result/(float)FILTER_LENGTH);
+//     result = result/(float)FILTER_LENGTH;
+// //     else{
+// //         printf("WTF %u %u\n", tcnt, tcnt_last);
+// //     }
+//     printf("TS: %i\n", ts);
+//     printf("last: %u\n", tcnt_last);
+//     float AmplitudeFactor = 1.0/2.0;
+//     float DecayFactor = 1.0-AmplitudeFactor;
+//     MovingAverage *= DecayFactor;
+//     MovingAverage += AmplitudeFactor * result;
+//     printf("%f %f\n", result, MovingAverage);
+//     if(milli_reset){
+//         sysclk_adj += round(MovingAverage);
+//         adj_ready = 1;
+//     }
+//     if(PPS_DEBUG == 1){
+//             printf("%u,", pps);
+//             printf("%f,", result);//MovingAverage);
+//             printf("%u,", sysclk_adj);
+//             printf("%u,", tcnt);
+//             ds3231_temperature temperature;
+//             ds3231_get_temp(&temperature);
+//             printf("%lu,%lu,%i.%i,", time(NULL), gps_seconds, temperature.temperature, temperature.fraction);
+//             printf("%u,%u\n", valid, fix_type);
+//     }
+//     valid = 0;
+//     fix_type = 0;
+//     gps_seconds = 0;
+// }
+
 ISR(TIMER1_CAPT_vect){
-    pps_icr = ICR1;
+    tcnt = ICR1;
     pps = sys_milli;
-    if(!milli_reset && pps_count == 5){
-        sysclk_adj = OCR1A_VAL;
-    }
+//     if(!milli_reset && pps_count == 5){
+// //         sysclk_adj = OCR1A_VAL;
+//     }
     if(!milli_reset && pps_count == 60){
-        sys_milli = 0;
-        TCNT1 = 0;
+//         sys_milli = 0;
+//         TCNT1 = 0;
         set_system_time(gps_seconds);
         milli_reset = 1;
+        pps_count = 0;
     }
-    pps_count++;
+    if(pps_count<254){
+        pps_count++;
+    }
 }

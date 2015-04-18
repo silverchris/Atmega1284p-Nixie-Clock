@@ -32,7 +32,6 @@ ISR (TIMER1_COMPA_vect){
         OCR1A = OCR1A_VAL;
     }
     if(sys_milli >= 1000){
-//         OCR1A = OCR1A_VAL;
         system_tick();
         sys_milli = 0;
         

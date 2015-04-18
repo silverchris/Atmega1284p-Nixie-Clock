@@ -24,13 +24,6 @@ extern int ui_flag;
 extern int gps_flag;
 extern int second_flag;
 
-extern uint16_t pps;
-extern uint16_t pps_last;
-extern uint16_t pps_tcnt_last;
-extern uint16_t pps_icr;
-extern time_t gps_seconds;
-extern time_t seconds;
-
 int8_t utc_toggle;
 
 int main(void){
