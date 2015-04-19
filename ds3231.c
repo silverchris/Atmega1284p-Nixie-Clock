@@ -79,6 +79,8 @@ uint8_t ds3231_init(void) {
         printf("RTC Valid\n");
         struct tm tm_struct;
         ds3231_get(&tm_struct);
+        time_t seconds = mk_gmtime(&tm_struct);
+        set_system_time(seconds);
         char time[25];
         strftime(time, sizeof(time), "%Y-%m-%d %H:%M:%S\n", &tm_struct);
         printf(time);
@@ -112,6 +114,7 @@ void ds3231_set(struct tm *tm_struct) {
     TWI_buffer_out[4] = 0x00;//skip this reg
     TWI_buffer_out[5] = (0x3f & dectobcd(tm_struct->tm_mday));
     TWI_buffer_out[6] = (0x1f & dectobcd(tm_struct->tm_mon+1));
+    TWI_buffer_out[6] = TWI_buffer_out[6]|(((tm_struct->tm_year-100)/100)<<8);//Set the century marker... this should work until 2200...
     TWI_buffer_out[7] = (dectobcd(tm_struct->tm_year-100));
     /* write (UTC) time to chip */
     TWI_master_start_write(DS3231_ADDR, 8);
@@ -138,7 +141,9 @@ void ds3231_get(struct tm *tm_struct){
     tm_struct->tm_mday = BCDToDecimal(0x3f & TWI_buffer_in[4]);
     tm_struct->tm_mon = BCDToDecimal(0x1f & TWI_buffer_in[5])-1;
     tm_struct->tm_year = BCDToDecimal(TWI_buffer_in[6])+100;
-    
+    if((TWI_buffer_in[5] >> 8)){
+        tm_struct->tm_year += 100;
+    }
     tm_struct->tm_wday = -1;
     tm_struct->tm_yday = -1;
     return;

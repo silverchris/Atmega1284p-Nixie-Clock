@@ -198,12 +198,10 @@ void run_gps(void){
     }
 }
 
-
-
 void pps_enable(void){
     valid = 0;
     fix_type = FIX_INVALID;
-    PPS_DEBUG = 1;
+    PPS_DEBUG = 0;
     //TODO: Probably take into account the timestamp/last message is for the previous second
     TIMSK1 |= (1 << ICIE1);
 }
@@ -225,112 +223,36 @@ void pps_filter(void){
     }
     if(result <= ((998*1000000)/100)*-1 && result >= ((1000*1000000)/100)*-1){
         result += (1000*1000000)/100;
-    }
-    printf("%" PRIi32 "\n", val);
-    printf("%" PRIi32 "\n", last_val);
-    printf("%" PRIi32 "\n", result);
-    printf("%" PRIi32 "\n", (1*1000000)/100);
-    
+    }    
     float AmplitudeFactor = .5;//1.0/2.0;
     float DecayFactor = .62;//1.0-AmplitudeFactor;
     MovingAverage *= DecayFactor;
     MovingAverage += AmplitudeFactor * result;
-    printf("%f\n", MovingAverage);
     if(milli_reset && pps_count > 20){
         sysclk_adj += round(MovingAverage);
         adj_ready = 1;
     }
     if(PPS_DEBUG == 1){
+            printf("%" PRIi32 "\n", val);
+            printf("%" PRIi32 "\n", last_val);
+            printf("%" PRIi32 "\n", result);
+            printf("%" PRIi32 "\n", (1*1000000)/100);
+            printf("%f\n", MovingAverage);
             printf("%u,", pps);
             printf("%u,", tcnt);
             printf("%li,", result);
             printf("%f,", MovingAverage);
             printf("%u,", sysclk_adj);
             printf("%u,%u\n", valid, fix_type);
+            printf("\n");
     }
     
     last_val = val;
-    printf("\n");
 }
-
-// #define FILTER_LENGTH 3
-// int16_t filter[FILTER_LENGTH];
-// float MovingAverage;
-// 
-// void pps_filter(void){
-//     int16_t ts = 0;
-//     if(valid == 0){
-//         return;
-//     }
-//     printf("%u\n ",tcnt);
-//     printf("%u\n", tcnt_last);
-//     printf("%u\n ", tcnt);
-//     printf("%u\n\n", tcnt_last);
-//     if(tcnt_last > tcnt){
-//         printf("tcnt_last > tcnt\n");
-//         ts = ((tcnt_last-tcnt)-OCR1A_VAL)*-1;
-//         printf("%u-%u-%u=%i\n", tcnt_last, tcnt, OCR1A_VAL, ts);
-//         if(ts > 500){
-//             ts = (tcnt_last-tcnt)*-1;
-//             printf("%u-%u=%i\n", tcnt_last, tcnt, ts);
-//         }
-//     }
-//     else if(tcnt_last < tcnt){
-//         ts = (tcnt-tcnt_last);
-//         printf("tcnt_last < tcnt\n");
-//         printf("%u-%u=%i\n", tcnt, tcnt_last, ts);
-//         if(ts < -500){
-//             ts = (tcnt-tcnt_last-OCR1A_VAL);
-//         }
-//     }
-//     
-//     int8_t i;
-//     for(i=0;i<FILTER_LENGTH-1;i++){
-//         filter[i] = filter[i+1];
-//         printf("filter: %i\n", i);
-//     }
-//     filter[FILTER_LENGTH-1] = ts;
-//     float result = 0.0;
-//     for(i=0;i<FILTER_LENGTH;i++){
-//         result += filter[i];
-//     }
-//     printf("Average of %u samples: %f\n", FILTER_LENGTH, result/(float)FILTER_LENGTH);
-//     result = result/(float)FILTER_LENGTH;
-// //     else{
-// //         printf("WTF %u %u\n", tcnt, tcnt_last);
-// //     }
-//     printf("TS: %i\n", ts);
-//     printf("last: %u\n", tcnt_last);
-//     float AmplitudeFactor = 1.0/2.0;
-//     float DecayFactor = 1.0-AmplitudeFactor;
-//     MovingAverage *= DecayFactor;
-//     MovingAverage += AmplitudeFactor * result;
-//     printf("%f %f\n", result, MovingAverage);
-//     if(milli_reset){
-//         sysclk_adj += round(MovingAverage);
-//         adj_ready = 1;
-//     }
-//     if(PPS_DEBUG == 1){
-//             printf("%u,", pps);
-//             printf("%f,", result);//MovingAverage);
-//             printf("%u,", sysclk_adj);
-//             printf("%u,", tcnt);
-//             ds3231_temperature temperature;
-//             ds3231_get_temp(&temperature);
-//             printf("%lu,%lu,%i.%i,", time(NULL), gps_seconds, temperature.temperature, temperature.fraction);
-//             printf("%u,%u\n", valid, fix_type);
-//     }
-//     valid = 0;
-//     fix_type = 0;
-//     gps_seconds = 0;
-// }
 
 ISR(TIMER1_CAPT_vect){
     tcnt = ICR1;
     pps = sys_milli;
-//     if(!milli_reset && pps_count == 5){
-// //         sysclk_adj = OCR1A_VAL;
-//     }
     if(!milli_reset && pps_count == 60){
 //         sys_milli = 0;
 //         TCNT1 = 0;

@@ -35,8 +35,8 @@ int main(void){
     xboot_get_version(&xbootver);
     printf("xboot Version:    %d.%d\n", xbootver>>8, xbootver&0xFF);
     TWI_init();
-    ds3231_init();
     sysclk_setup();
+    ds3231_init();
     tz_init();
     spi_init();
     display_init();

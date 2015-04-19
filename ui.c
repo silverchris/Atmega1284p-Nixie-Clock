@@ -12,6 +12,7 @@
 #include "uart.h"
 #include "tz.h"
 #include "hash.h"
+#include "ds3231.h"
 // #include <util/delay.h>
 
 
@@ -24,6 +25,7 @@ int ui_flag;
 #define UI_MODE_DISPLAY_TIME 11
 #define UI_MODE_SET 12
 #define UI_MODE_TZ 13
+#define UI_MODE_TEST 14
 
 
 void setup_ui(void){
@@ -41,12 +43,12 @@ void display_time(void){
     time_t seconds;
     time(&seconds);
     gmtime_r(&seconds, &tm_struct);
-    char time[31];
-    strftime(time, sizeof(time), "UTC:   %Y-%m-%d %H:%M:%S\n", &tm_struct);
-    printf(time);
+    char time_str[31];
+    strftime(time_str, sizeof(time_str), "UTC:   %Y-%m-%d %H:%M:%S\n", &tm_struct);
+    printf(time_str);
     localtime_r(&seconds, &tm_struct);
-    strftime(time, sizeof(time), "Local: %Y-%m-%d %H:%M:%S\n", &tm_struct);
-    printf(time);
+    strftime(time_str, sizeof(time_str), "Local: %Y-%m-%d %H:%M:%S\n", &tm_struct);
+    printf(time_str);
     printf("Seconds: %lu\n", seconds);
     ui_mode = UI_MODE_MAIN;
 }
@@ -54,6 +56,22 @@ void display_time(void){
 void ui_end(void){
     ui_mode = UI_MODE_END;
     ui_flag = 1;
+}
+
+void ds3231_debug(void){
+    struct tm tm_struct;
+    time_t seconds;
+    char time_str[31];
+    time(&seconds);
+    gmtime_r(&seconds, &tm_struct);
+    tm_struct.tm_year = 215;
+    strftime(time_str, sizeof(time_str), "UTC:   %Y-%m-%d %H:%M:%S\n", &tm_struct);
+    printf(time_str);
+    ds3231_set(&tm_struct);
+    tm_struct.tm_year = 0;
+    ds3231_get(&tm_struct);
+    strftime(time_str, sizeof(time_str), "UTC:   %Y-%m-%d %H:%M:%S\n", &tm_struct);
+    printf(time_str);
 }
 
 void run_ui(void){
@@ -69,7 +87,7 @@ void run_ui(void){
             printf("\n");
             if(sscanf(line, "%02d", &i)){
                 i = i+10;
-                if(i > 10 && i <= 13){
+                if(i > 10 && i <= 14){
                     ui_mode = i;
                     ui_flag = 1;
                 }
@@ -118,6 +136,10 @@ void run_ui(void){
                     printf("\nPlease Enter a Timezone\nl - to list\n! - to exit\n>");
                 }
             }
+            break;
+        case UI_MODE_TEST:
+            ds3231_debug();
+            ui_end();
             break;
     }
 }
