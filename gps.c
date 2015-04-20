@@ -170,8 +170,13 @@ void run_gps(void){
     data[strlen(data)-2] = '\0';
     if(check_crc(data)){
         printf("Invalid NMEA Sentence\n");
+        printf("%u\n", uart1_rx_buffer.size);
+        printf("%u\n", uart1_rx_buffer.start);
+        printf("%u\n", uart1_rx_buffer.end);
+        printf("%s\n", data);
         return;
     }
+//     printf("%s\n", data);
     char *token;
     token = strtok(data, ",");
     if(!strcmp(token, "$GPGGA")){

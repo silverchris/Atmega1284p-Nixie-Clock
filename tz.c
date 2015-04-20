@@ -371,14 +371,15 @@ uint16_t zone_by_name(char *zone_name){
 
 void list_zones(void){
     uint16_t count = (((uint16_t)&_binary_tz_offset_size)/2)-1;
+    uint_farptr_t ptr = &_binary_tz_names_start;
     uint16_t i;
     char name[30];
     for(i=0;i<=count;i++){
-        get_name(name, i);
-        printf("%s\n", name);
-        if(i%10 == 0){
-            _delay_ms(10);
+        if(!i==0){
+            ptr = ptr+(strlen_PF(ptr)+1);
         }
+        strncpy_PF(name, ptr, 29);
+        printf("%s\n", name);
     }
 }
 

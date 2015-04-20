@@ -2,7 +2,7 @@
 #define _UART_H
 #include "buffer.h"
 
-#define UART_BUFFER_SIZE 254
+#define UART_BUFFER_SIZE 250
 
 CircularBuffer uart0_rx_buffer;
 

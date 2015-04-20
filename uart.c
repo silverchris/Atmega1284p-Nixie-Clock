@@ -10,6 +10,9 @@
 #include "xbootapi.h"
 #include "ui.h"
 
+#include <util/delay.h>
+
+
 extern int ui_flag;
 extern int gps_flag;
 
@@ -63,19 +66,19 @@ ISR(USART0_RX_vect){
 }
 
 ISR(USART1_RX_vect){
-    char rx = UDR1;
-    cbWrite(&uart1_rx_buffer, &rx);
-    if(rx == '\n'){
-        gps_flag = 1;
+    if(!cbIsFull(&uart1_rx_buffer)){
+        char rx = UDR1;
+        cbWrite(&uart1_rx_buffer, &rx);
+        if(rx == '\n'){
+            gps_flag = 1;
+        }
     }
 }
 
 ISR(USART0_UDRE_vect){
+    cbRead(&uart0_tx_buffer, (char *)&UDR0);
     if(cbIsEmpty(uart0_tx_buffer)){
         UCSR0B &= ~(1<<UDRIE0);
-    }
-    else{
-        cbRead(&uart0_tx_buffer, (char *)&UDR0);
     }
 }
 
@@ -88,6 +91,9 @@ void setup_uarts(void){
 }
 
 int uart_putchar(char c, FILE *stream){
+    while(cbIsFull(&uart0_tx_buffer)){
+        _delay_us(1);
+    }
     if(c == '\n'){
         char r = '\r';
         cbWrite(&uart0_tx_buffer, &r);
